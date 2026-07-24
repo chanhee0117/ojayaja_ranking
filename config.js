@@ -1,2 +1,1 @@
 const CONFIG={SHEET_ID:'1BZ7HAUMegaHW4W5M3bFxUm8Zp86zjrzAQ3AComk0gbo',SHEET_NAME:'1학기 자습 총시수'};
-
