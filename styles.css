@@ -331,6 +331,92 @@ aside a:hover{color:var(--gold)}
 }
 #closeAdmin:hover{color:var(--danger)}
 
+/* ---------------- ��겕 寃뚯씠吏� ---------------- */
+.gauge{margin-top:12px;text-align:left}
+.gauge-track{
+  height:8px;border-radius:5px;background:rgba(255,255,255,.08);
+  overflow:hidden;box-shadow:inset 0 1px 3px #0008;
+}
+.gauge-fill{
+  height:100%;border-radius:5px;
+  background:linear-gradient(90deg,var(--blue),var(--gold));
+  transition:width .8s cubic-bezier(.22,1,.36,1);
+}
+.gauge.warn .gauge-fill{
+  background:linear-gradient(90deg,#ff8a4c,var(--danger));
+  animation:gaugePulse 1.4s ease-in-out infinite;
+}
+@keyframes gaugePulse{0%,100%{filter:brightness(1)}50%{filter:brightness(1.35)}}
+.gauge small{display:block;margin-top:5px;font-size:11px;color:var(--muted)}
+.gauge.warn small{color:var(--danger)}
+.gauge.sm .gauge-track{height:6px}
+.gauge.sm small{font-size:10.5px}
+.gauge.xs{margin-top:6px;max-width:130px}
+.gauge.xs .gauge-track{height:4px}
+.gauge.xs small{font-size:10px}
+.gauge.lg .gauge-track{height:10px}
+.gauge.lg{margin-bottom:4px}
+
+/* ---------------- �쒖쐞 蹂��� 諛곗� ---------------- */
+.delta{
+  display:inline-block;padding:2px 7px;border-radius:6px;font-size:11px;
+  font-weight:800;font-family:var(--disp);letter-spacing:.2px;
+}
+.delta.up{color:#7bffb0;background:rgba(123,255,176,.12)}
+.delta.up.hot{
+  color:#ffe08a;background:rgba(255,190,80,.16);
+  animation:hotPulse 1.2s ease-in-out infinite;
+}
+@keyframes hotPulse{0%,100%{box-shadow:0 0 0 rgba(255,190,80,0)}50%{box-shadow:0 0 12px rgba(255,190,80,.55)}}
+.delta.down{color:var(--danger);background:rgba(255,95,121,.12)}
+.delta.flat{color:var(--muted);background:rgba(255,255,255,.05)}
+.delta.new{color:var(--blue);background:rgba(95,157,255,.14)}
+
+/* ---------------- 蹂댁“(ghost) 踰꾪듉 ---------------- */
+button.ghost{
+  background:transparent;border:1px solid var(--line-strong);color:var(--gold);
+  box-shadow:none;
+}
+button.ghost:hover{background:rgba(232,197,116,.08);box-shadow:0 0 16px rgba(232,197,116,.2)}
+button.ghost.active{
+  background:linear-gradient(135deg,var(--gold-deep),var(--gold));color:#0a0e18;
+  box-shadow:0 0 18px rgba(232,197,116,.5);
+}
+
+/* ---------------- 諛� 移대뱶 �뚯썙諛� & �좏깮 �곹깭 ---------------- */
+.nexus-mini{height:5px;border-radius:4px;background:rgba(255,255,255,.07);margin-top:12px;overflow:hidden}
+.nexus-mini-fill{height:100%;background:linear-gradient(90deg,var(--blue),var(--gold));border-radius:4px;transition:width .6s ease}
+.class.selected{
+  border-color:var(--gold) !important;
+  box-shadow:0 0 0 2px rgba(232,197,116,.35),0 18px 40px #000b;
+}
+
+/* ---------------- �μ꽌�� ��寃� �⑤꼸 ---------------- */
+.battle{padding:26px;text-align:center;animation:fadeUp .4s ease both}
+.battle h3{margin:0 0 20px;font-size:17px}
+.battle-row{display:flex;align-items:center;justify-content:center;gap:24px;margin-bottom:18px}
+.battle-side{flex:1;max-width:220px;padding:14px;border-radius:10px;transition:opacity .4s ease,filter .4s ease}
+.battle-side p{margin:0 0 6px;color:var(--muted);font-size:13px}
+.battle-side strong{
+  font-family:var(--disp);font-size:22px;color:var(--gold);font-weight:800;
+  text-shadow:0 0 14px rgba(232,197,116,.35);
+}
+.battle-side.lose{opacity:.45;filter:grayscale(.6)}
+.battle-side.win strong{color:var(--gold-soft);text-shadow:0 0 22px rgba(232,197,116,.7)}
+.battle-vs{
+  font-family:var(--disp);font-weight:900;font-size:20px;color:var(--muted);
+  letter-spacing:1px;
+}
+.nexus-bar{
+  display:flex;height:22px;border-radius:11px;overflow:hidden;
+  background:rgba(255,255,255,.06);box-shadow:inset 0 2px 6px #000a;
+  border:1px solid var(--line);
+}
+.nexus-fill{height:100%;transition:width 1.1s cubic-bezier(.22,1,.36,1)}
+.nexus-fill.left{background:linear-gradient(90deg,var(--blue-deep),var(--blue))}
+.nexus-fill.right{background:linear-gradient(90deg,var(--gold),var(--gold-deep));margin-left:auto}
+.battle-result{margin:16px 0;color:var(--gold);font-weight:700;font-size:14px}
+
 @media(max-width:700px){
   nav{display:none}
   .head{justify-content:space-between}
@@ -342,4 +428,7 @@ aside a:hover{color:var(--gold)}
   .classes{grid-template-columns:1fr}
   .result{grid-template-columns:1fr 1fr}
   #updated{font-size:10px}
+  .battle-row{flex-wrap:wrap}
+  .battle-vs{order:3;width:100%}
+  .title{flex-wrap:wrap;gap:10px}
 }
