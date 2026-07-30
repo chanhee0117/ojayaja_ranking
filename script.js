@@ -1,93 +1,156 @@
-const ADMIN_PASSWORD = 'daejin1234';
-const PENALTY_PER_HOUR = 2;
-const CLASS_PENALTY = 1;
-
-const tiers = [
-  ['challenger', 'Challenger', '무벌점 천상계', 0, 0],
-  ['diamond', 'Diamond', '주의 구간', 1, 2],
-  ['platinum', 'Platinum', '관리 필요', 3, 4],
-  ['gold', 'Gold', '강등권', 5, 6],
-  ['silver', 'Silver', '면담 추천', 7, 8],
-  ['bronze', 'Bronze', '퇴출 위기', 9, 10],
-  ['iron', 'Iron', '퇴출', 11, Infinity]
+/* ---------------- 승급전 LP 티어 시스템 ----------------
+ * 골드에서 시작해서 자습시간으로 LP를 쌓아 승급하고, 벌점으로 LP를 잃어 강등됩니다.
+ * ⚠️ TIERS 순서, START_TIER_INDEX, LP_PER_HOUR, LP_PER_PENALTY는
+ *    Code.gs와 반드시 같은 값을 유지해야 승급 로그가 정확합니다.
+ */
+const TIERS = [
+  { name: 'Iron', ko: '아이언', color: '#5a5f6b' },
+  { name: 'Bronze', ko: '브론즈', color: '#b0703a' },
+  { name: 'Silver', ko: '실버', color: '#9fb0c3' },
+  { name: 'Gold', ko: '골드', color: '#e8c574' },
+  { name: 'Platinum', ko: '플래티넘', color: '#3fd9c7' },
+  { name: 'Emerald', ko: '에메랄드', color: '#34c77b' },
+  { name: 'Diamond', ko: '다이아몬드', color: '#b06bff' },
+  { name: 'Master', ko: '마스터', color: '#ff5f6d' },
+  { name: 'Challenger', ko: '챌린저', color: '#ffe37a' }
 ];
+const START_TIER_INDEX = 3; // Gold
+const LP_PER_HOUR = 4;
+const LP_PER_PENALTY = 50;
+
+// 벌점 자체에 대한 경고 문구 (승급전 티어와 별개로, 실제 징계 상태를 나타냄)
+function penaltyStatus(penalty) {
+  if (penalty >= 11) return '퇴출';
+  if (penalty >= 9) return '퇴출 위기';
+  if (penalty >= 7) return '면담 추천';
+  if (penalty >= 5) return '강등권';
+  if (penalty >= 3) return '관리 필요';
+  if (penalty >= 1) return '주의 구간';
+  return '무벌점 천상계';
+}
 
 let students = [];
 let admin = false;
 let penalties = {};
-let history = null; // { date, ranks:{studentId:rank}, rp:{studentId:rp} }
-
-let battleMode = false;
-let battleSelection = [];
+let recentPromotions = [];
 
 const $ = selector => document.querySelector(selector);
-const tier = penalty => tiers.find(item => penalty >= item[3] && penalty <= item[4]);
-const rankPoint = student => Math.max(0, Math.round(student.hours - student.penalty * PENALTY_PER_HOUR));
-const rankStudents = () => [...students].sort((a, b) => rankPoint(b) - rankPoint(a) || a.penalty - b.penalty);
+
+function computeTier(student) {
+  const totalLP = student.hours * LP_PER_HOUR - student.penalty * LP_PER_PENALTY;
+  const offset = Math.floor(totalLP / 100);
+  let idx = START_TIER_INDEX + offset;
+  let lp;
+  let prestige = false;
+
+  if (idx >= TIERS.length - 1) {
+    idx = TIERS.length - 1;
+    lp = totalLP - (idx - START_TIER_INDEX) * 100;
+    prestige = true;
+  } else if (idx <= 0) {
+    idx = 0;
+    lp = 0;
+  } else {
+    lp = ((totalLP % 100) + 100) % 100;
+  }
+
+  return { idx, totalLP, lp, prestige, ...TIERS[idx] };
+}
+
+const rankStudents = () => [...students].sort((a, b) => computeTier(b).totalLP - computeTier(a).totalLP || a.penalty - b.penalty);
 const penaltyStudents = () => [...students].sort((a, b) => b.penalty - a.penalty || a.studentId.localeCompare(b.studentId));
 
-/* ---------------- 랭크 게이지 (승급전 연출) ---------------- */
-function tierGauge(student) {
-  const t = tier(student.penalty);
-  const [, label, , min, max] = t;
+function tierNote(t) {
+  if (t.prestige) return '🔥 최고 티어 유지 중';
+  if (t.idx === 0) return '⚠️ 최저 티어 · 추가 벌점 시 즉시 면담 필요';
 
-  if (label === 'Challenger') {
-    return { pct: 100, label, warn: false, note: '무벌점 · 최상위 티어 유지 중' };
-  }
-  if (max === Infinity) {
-    return { pct: 100, label, warn: true, danger: true, note: '퇴출 구간 · 즉시 면담 필요' };
-  }
+  const toDemote = Math.ceil((t.lp + 1) / LP_PER_PENALTY);
+  if (toDemote <= 1) return `⚠️ 벌점 1점만 더 받으면 ${TIERS[t.idx - 1].ko}로 강등!`;
 
-  const range = max - min + 1;
-  const used = student.penalty - min;
-  const pct = Math.max(4, Math.round((1 - used / range) * 100));
-  const left = max - student.penalty;
-  const warn = left <= 1;
-  const note = warn
-    ? `⚠️ 벌점 ${left}점만 더 받으면 강등!`
-    : `강등까지 벌점 여유 ${left}점`;
-
-  return { pct, label, warn, danger: false, note };
+  const hoursToPromote = Math.ceil((100 - t.lp) / LP_PER_HOUR);
+  return `다음 승급까지 자습 ${hoursToPromote}시간 남음`;
 }
 
-function gaugeHtml(student, size = '') {
-  const g = tierGauge(student);
-  const cls = ['gauge', size, g.warn ? 'warn' : ''].filter(Boolean).join(' ');
-  return `<div class="${cls}"><div class="gauge-track"><div class="gauge-fill" style="width:${g.pct}%"></div></div><small>${g.note}</small></div>`;
+function badgeHtml(t, size = '') {
+  return `<span class="rank-badge ${size}" style="--tier-color:${t.color}">
+    <span class="badge-shield"></span>
+    <span class="badge-text"><b>${t.ko}</b><small>${Math.round(t.lp)} LP</small></span>
+  </span>`;
 }
 
-/* ---------------- 순위 변동 ---------------- */
-function rankDelta(student, currentRank) {
-  if (!history || !history.ranks || !(student.studentId in history.ranks)) return null;
-  const prevRank = Number(history.ranks[student.studentId]);
-  if (!Number.isFinite(prevRank)) return null;
-  return prevRank - currentRank; // 양수 = 상승
+function gaugeHtml(t, size = '') {
+  const pct = t.prestige ? 100 : t.lp;
+  return `<div class="gauge ${size}" style="--tier-color:${t.color}">
+    <div class="gauge-track"><div class="gauge-fill" style="width:${pct}%"></div></div>
+    <small>${tierNote(t)}</small>
+  </div>`;
 }
 
-function deltaHtml(delta) {
-  if (delta === null) return '<span class="delta new">NEW</span>';
-  if (delta === 0) return '<span class="delta flat">-</span>';
-  if (delta > 0) {
-    const hot = delta >= 3 ? ' hot' : '';
-    return `<span class="delta up${hot}">▲${delta}${delta >= 3 ? ' 🔥' : ''}</span>`;
+function tierCellHtml(student) {
+  const t = computeTier(student);
+  return `<div class="tier-cell">${badgeHtml(t, 'xs')}${gaugeHtml(t, 'xs')}</div>`;
+}
+
+/* ---------------- 최근 승급자 피드 ---------------- */
+function renderPromotions() {
+  const el = $('#promotionFeed');
+  if (!el) return;
+
+  if (!recentPromotions.length) {
+    el.innerHTML = '<p class="hint">아직 승급 기록이 없습니다. 자습을 많이 할수록 승급 소식이 쌓여요!</p>';
+    return;
   }
-  return `<span class="delta down">▼${Math.abs(delta)}</span>`;
+
+  el.innerHTML = recentPromotions.map(item => `
+    <div class="promo-item">
+      <span class="promo-name"><b>${item.name}</b>님</span>
+      <span class="promo-tier">${item.from} → ${item.to}</span>
+      <span class="promo-time">${item.date}</span>
+    </div>
+  `).join('');
+}
+
+/* ---------------- 개인 승급 토스트 ---------------- */
+function showLevelUpToast(name, fromKo, toKo) {
+  let toast = document.querySelector('.level-up-toast');
+  if (!toast) {
+    toast = document.createElement('div');
+    toast.className = 'level-up-toast';
+    document.body.appendChild(toast);
+  }
+  toast.innerHTML = `🎉 <b>${name}</b>님, <b>${fromKo}</b> → <b>${toKo}</b> 승급을 축하합니다!`;
+  requestAnimationFrame(() => toast.classList.add('show'));
+  clearTimeout(toast._timer);
+  toast._timer = setTimeout(() => toast.classList.remove('show'), 4200);
+}
+
+function checkPersonalLevelUp(student, t) {
+  const key = 'daejin-tier-seen';
+  const seen = JSON.parse(localStorage.getItem(key) || '{}');
+  const prevIdx = seen[student.studentId];
+
+  if (prevIdx !== undefined && t.idx > prevIdx) {
+    showLevelUpToast(student.name, TIERS[prevIdx].ko, t.ko);
+  }
+
+  seen[student.studentId] = t.idx;
+  localStorage.setItem(key, JSON.stringify(seen));
 }
 
 /* ---------------- 데이터 로드 ---------------- */
 async function getServerData() {
   if (!CONFIG.APPS_SCRIPT_URL) {
-    return { penalties: JSON.parse(localStorage.getItem('daejin-rift-penalties') || '{}'), history: null };
+    return { penalties: JSON.parse(localStorage.getItem('daejin-rift-penalties') || '{}'), recentPromotions: [] };
   }
 
   try {
     const response = await fetch(CONFIG.APPS_SCRIPT_URL);
     if (!response.ok) throw new Error('데이터를 불러오지 못했습니다.');
     const data = await response.json();
-    return { penalties: data.penalties || {}, history: data.history || null };
+    return { penalties: data.penalties || {}, recentPromotions: data.recentPromotions || [] };
   } catch (error) {
     console.warn('공용 저장소 연결 실패: 브라우저 저장값을 사용합니다.', error);
-    return { penalties: JSON.parse(localStorage.getItem('daejin-rift-penalties') || '{}'), history: null };
+    return { penalties: JSON.parse(localStorage.getItem('daejin-rift-penalties') || '{}'), recentPromotions: [] };
   }
 }
 
@@ -118,7 +181,7 @@ async function load() {
   const data = await loadSheetJsonp();
   const server = await getServerData();
   penalties = server.penalties;
-  history = server.history;
+  recentPromotions = server.recentPromotions;
 
   students = data.table.rows
     .filter(row => row.c?.[2] && Number.isFinite(Number(row.c?.[0]?.v)) && Number.isFinite(Number(row.c?.[1]?.v)))
@@ -159,7 +222,7 @@ function groups() {
       students: group,
       hours,
       penalty,
-      final: hours - penalty * CLASS_PENALTY,
+      final: hours - penalty,
       avg: hours / group.length
     };
   }).sort((a, b) => b.final - a.final);
@@ -171,29 +234,30 @@ function render() {
   const penaltyRanked = penaltyStudents();
   const classGroups = groups();
 
+  renderPromotions();
+
   $('#top3').innerHTML = ranked.slice(0, 3).map((student, index) => {
-    const delta = rankDelta(student, index + 1);
+    const t = computeTier(student);
     return `
     <article class="top">
       <i>${['♛', '♜', '♞'][index]}</i>
       <h3>${student.name}</h3>
-      <span>${student.studentId} · ${tier(student.penalty)[1]}</span>
-      <strong>${rankPoint(student)} RP</strong>
-      <small>벌점 ${student.penalty}점 ${deltaHtml(delta)}</small>
-      ${gaugeHtml(student, 'sm')}
+      <span>${student.studentId} · 2학년 ${student.class}반</span>
+      ${badgeHtml(t, 'sm')}
+      <strong>${Math.round(t.lp)} LP</strong>
+      ${gaugeHtml(t, 'sm')}
     </article>`;
   }).join('');
 
   $('#rankingBody').innerHTML = ranked.map((student, index) => {
-    const delta = rankDelta(student, index + 1);
+    const t = computeTier(student);
     return `
     <tr class="${student.penalty >= 11 ? 'expelled' : ''}">
-      <td>#${index + 1}</td>
-      <td>${deltaHtml(delta)}</td>
-      <td>${student.studentId}</td><td><b>${student.name}</b></td>
+      <td>#${index + 1}</td><td>${student.studentId}</td><td><b>${student.name}</b></td>
       <td>2학년 ${student.class}반</td><td>${student.hours}h</td>
-      <td class="danger">${student.penalty}점</td><td>${rankPoint(student)} RP</td>
-      <td class="tier">${tier(student.penalty)[1]}${student.penalty >= 11 ? ' · 퇴출' : ''}${gaugeHtml(student, 'xs')}</td>
+      <td class="danger">${student.penalty}점</td>
+      <td>${Math.round(t.lp)} LP</td>
+      <td>${tierCellHtml(student)}</td>
     </tr>`;
   }).join('');
 
@@ -201,52 +265,22 @@ function render() {
     <tr class="${student.penalty >= 11 ? 'expelled' : ''}">
       <td>#${index + 1}</td><td>${student.studentId}</td><td><b>${student.name}</b></td>
       <td>2학년 ${student.class}반</td><td class="danger">${student.penalty}점</td>
-      <td>${student.penalty >= 11 ? '퇴출' : tier(student.penalty)[2]}</td>
+      <td>${penaltyStatus(student.penalty)}</td>
     </tr>
   `).join('');
 
-  const maxFinal = Math.max(...classGroups.map(group => group.final), 1);
-
-  $('#classCards').innerHTML = classGroups.map((group, index) => {
-    const power = Math.max(6, Math.round((group.final / maxFinal) * 100));
-    const selected = battleSelection.includes(group.class) ? ' selected' : '';
-    return `
-    <button class="class${selected}" data-class="${group.class}">
+  $('#classCards').innerHTML = classGroups.map((group, index) => `
+    <button class="class" data-class="${group.class}">
       <p>🏰 ${index + 1}위 · 2학년 ${group.class}반</p>
       <strong>${group.final.toFixed(1)} RP</strong>
       <p>총 ${group.hours}h · 평균 ${group.avg.toFixed(1)}h</p>
-      <small>반 벌점 ${group.penalty}점 · -${(group.penalty * CLASS_PENALTY).toFixed(1)}h</small>
-      <div class="nexus-mini"><div class="nexus-mini-fill" style="width:${power}%"></div></div>
-    </button>`;
-  }).join('');
+      <small>반 벌점 ${group.penalty}점 · -${group.penalty.toFixed(1)}h</small>
+    </button>
+  `).join('');
 
   document.querySelectorAll('.class').forEach(card => {
-    card.onclick = () => handleClassClick(Number(card.dataset.class));
+    card.onclick = () => showClass(Number(card.dataset.class));
   });
-}
-
-function handleClassClick(classNumber) {
-  if (!battleMode) {
-    showClass(classNumber);
-    return;
-  }
-
-  const idx = battleSelection.indexOf(classNumber);
-  if (idx > -1) {
-    battleSelection.splice(idx, 1);
-  } else if (battleSelection.length < 2) {
-    battleSelection.push(classNumber);
-  } else {
-    battleSelection = [classNumber];
-  }
-
-  render();
-
-  if (battleSelection.length === 2) {
-    showBattle(battleSelection[0], battleSelection[1]);
-  } else {
-    $('#classBattle').hidden = true;
-  }
 }
 
 function showClass(classNumber) {
@@ -254,144 +288,10 @@ function showClass(classNumber) {
   const classRank = groups().findIndex(group => group.class === classNumber) + 1;
 
   $('#classDetail').hidden = false;
-  $('#classBattle').hidden = true;
-  $('#classDetail').innerHTML = `<h3>🏰 2학년 ${classNumber}반 · ${classRank}위</h3><ol>${classStudents.map((student, index) => `
-    <li>#${index + 1} <b>${student.studentId} ${student.name}</b><span>${rankPoint(student)} RP · ${tier(student.penalty)[1]} · 벌점 ${student.penalty}</span></li>
-  `).join('')}</ol>`;
-}
-
-/* ---------------- 넥서스 대결 ---------------- */
-function showBattle(classA, classB) {
-  const classGroups = groups();
-  const a = classGroups.find(group => group.class === classA);
-  const b = classGroups.find(group => group.class === classB);
-  if (!a || !b) return;
-
-  const offset = Math.min(a.final, b.final) < 0 ? Math.abs(Math.min(a.final, b.final)) + 1 : 0;
-  const scoreA = a.final + offset;
-  const scoreB = b.final + offset;
-  const total = scoreA + scoreB || 1;
-  const pctA = Math.max(6, Math.round((scoreA / total) * 100));
-  const pctB = 100 - pctA;
-  const winner = a.final === b.final ? null : (a.final > b.final ? a : b);
-
-  $('#classDetail').hidden = true;
-  const panel = $('#classBattle');
-  panel.hidden = false;
-  panel.innerHTML = `
-    <h3>⚔️ 넥서스 대결 · 2학년 ${a.class}반 VS 2학년 ${b.class}반</h3>
-    <div class="battle-row">
-      <div class="battle-side ${winner === a ? 'win' : winner ? 'lose' : ''}">
-        <p>2학년 ${a.class}반</p><strong>${a.final.toFixed(1)} RP</strong>
-      </div>
-      <div class="battle-vs">VS</div>
-      <div class="battle-side ${winner === b ? 'win' : winner ? 'lose' : ''}">
-        <p>2학년 ${b.class}반</p><strong>${b.final.toFixed(1)} RP</strong>
-      </div>
-    </div>
-    <div class="nexus-bar">
-      <div class="nexus-fill left" style="width:${pctA}%"></div>
-      <div class="nexus-fill right" style="width:${pctB}%"></div>
-    </div>
-    <p class="battle-result">${winner ? `🏆 2학년 ${winner.class}반의 넥서스가 파괴되지 않았습니다! 승리!` : '무승부 · 두 반의 넥서스가 팽팽합니다.'}</p>
-    <button id="resetBattle" class="ghost">다시 선택</button>
-  `;
-
-  // 애니메이션 트리거 (다음 프레임에 0% → 목표%로 채워지도록)
-  const fills = panel.querySelectorAll('.nexus-fill');
-  fills.forEach(fill => { fill.style.width = '0%'; });
-  requestAnimationFrame(() => requestAnimationFrame(() => {
-    fills[0].style.width = pctA + '%';
-    fills[1].style.width = pctB + '%';
-  }));
-
-  $('#resetBattle').onclick = () => {
-    battleSelection = [];
-    panel.hidden = true;
-    render();
-  };
-}
-
-/* ---------------- 소환사 카드 공유 ---------------- */
-function drawSummonerCard(student) {
-  const canvas = document.createElement('canvas');
-  canvas.width = 720;
-  canvas.height = 405;
-  const ctx = canvas.getContext('2d');
-  const studentTier = tier(student.penalty);
-
-  const bg = ctx.createLinearGradient(0, 0, 720, 405);
-  bg.addColorStop(0, '#0a1120');
-  bg.addColorStop(1, '#161f36');
-  ctx.fillStyle = bg;
-  ctx.fillRect(0, 0, 720, 405);
-
-  ctx.strokeStyle = '#e8c574';
-  ctx.lineWidth = 3;
-  ctx.strokeRect(14, 14, 692, 377);
-
-  ctx.fillStyle = '#e8c574';
-  ctx.font = '700 16px sans-serif';
-  ctx.fillText('DAEJIN RIFT · SEASON 2026', 40, 56);
-
-  ctx.fillStyle = '#f4f6ff';
-  ctx.font = '900 46px sans-serif';
-  ctx.fillText(student.name, 40, 130);
-
-  ctx.fillStyle = '#93a1c2';
-  ctx.font = '600 16px sans-serif';
-  ctx.fillText(`${student.studentId} · 2학년 ${student.class}반`, 40, 162);
-
-  ctx.fillStyle = '#e8c574';
-  ctx.font = '900 30px sans-serif';
-  ctx.fillText(studentTier[1].toUpperCase(), 40, 220);
-
-  ctx.fillStyle = '#f4f6ff';
-  ctx.font = '700 18px sans-serif';
-  ctx.fillText(`${rankPoint(student)} RP`, 40, 255);
-
-  const ranked = rankStudents();
-  const rankPos = ranked.indexOf(student) + 1;
-  const stats = [
-    [`자습 시간`, `${student.hours}h`],
-    [`벌점`, `${student.penalty}점`],
-    [`학교 순위`, `${rankPos}위 / ${ranked.length}명`]
-  ];
-  stats.forEach(([label, value], i) => {
-    const y = 300 + i * 32;
-    ctx.fillStyle = '#93a1c2';
-    ctx.font = '600 14px sans-serif';
-    ctx.fillText(label, 40, y);
-    ctx.fillStyle = '#f4f6ff';
-    ctx.font = '700 14px sans-serif';
-    ctx.fillText(value, 200, y);
-  });
-
-  return canvas;
-}
-
-async function shareSummonerCard(student) {
-  const canvas = drawSummonerCard(student);
-
-  canvas.toBlob(async blob => {
-    if (!blob) return;
-    const file = new File([blob], `소환사카드_${student.studentId}.png`, { type: 'image/png' });
-
-    if (navigator.canShare && navigator.canShare({ files: [file] })) {
-      try {
-        await navigator.share({ files: [file], title: '나의 소환사 카드', text: `${student.name}의 대진고의 협곡 카드` });
-        return;
-      } catch (error) {
-        // 공유 취소/실패 시 다운로드로 대체
-      }
-    }
-
-    const link = document.createElement('a');
-    link.href = URL.createObjectURL(blob);
-    link.download = `소환사카드_${student.studentId}.png`;
-    link.click();
-    URL.revokeObjectURL(link.href);
-  }, 'image/png');
+  $('#classDetail').innerHTML = `<h3>🏰 2학년 ${classNumber}반 · ${classRank}위</h3><ol>${classStudents.map((student, index) => {
+    const t = computeTier(student);
+    return `<li>#${index + 1} <b>${student.studentId} ${student.name}</b><span>${t.ko} · ${Math.round(t.lp)}LP · 벌점 ${student.penalty}</span></li>`;
+  }).join('')}</ol>`;
 }
 
 /* ---------------- 검색 ---------------- */
@@ -408,32 +308,33 @@ $('#searchForm').onsubmit = event => {
     return;
   }
 
-  const studentTier = tier(student.penalty);
+  const t = computeTier(student);
   const classRank = classGroups.findIndex(group => group.class === student.class) + 1;
   const rankPos = ranked.indexOf(student) + 1;
-  const delta = rankDelta(student, rankPos);
+
+  checkPersonalLevelUp(student, t);
 
   $('#searchResult').innerHTML = `
-    ${gaugeHtml(student, 'lg')}
+    <div class="search-tier" style="--tier-color:${t.color}">
+      ${badgeHtml(t, 'lg')}
+      ${gaugeHtml(t)}
+    </div>
     <div class="result">${[
       ['소환사', student.name],
       ['학번', student.studentId],
       ['소속', `2학년 ${student.class}반`],
       ['자습시간', `${student.hours}h`],
       ['벌점', `${student.penalty}점`],
-      ['랭크 점수', `${rankPoint(student)} RP`],
-      ['개인 티어', studentTier[1]],
-      ['학교 순위', `${rankPos}위 ${deltaHtml(delta)}`],
+      ['학교 순위', `${rankPos}위`],
       ['반 순위', `${classRank}위`],
-      ['상태', studentTier[2]]
+      ['징계 상태', penaltyStatus(student.penalty)]
     ].map(([label, value]) => `<div><span>${label}</span><b>${value}</b></div>`).join('')}</div>
-    <button id="shareCardBtn" class="ghost">🎴 소환사 카드 저장/공유</button>
   `;
-
-  $('#shareCardBtn').onclick = () => shareSummonerCard(student);
 };
 
 /* ---------------- 관리자 ---------------- */
+const ADMIN_PASSWORD = 'daejin1234';
+
 async function setPenalty() {
   const studentId = $('#penaltyStudent').value.replace(/\D/g, '').padStart(5, '0');
   const student = students.find(item => item.studentId === studentId);
@@ -458,15 +359,6 @@ async function setPenalty() {
   render();
 }
 
-async function saveSnapshotNow() {
-  if (!CONFIG.APPS_SCRIPT_URL) throw new Error('Apps Script 연결이 설정되어 있지 않습니다.');
-  const form = new URLSearchParams();
-  form.append('action', 'snapshot');
-  const response = await fetch(CONFIG.APPS_SCRIPT_URL, { method: 'POST', body: form });
-  if (!response.ok) throw new Error('스냅샷 저장에 실패했습니다.');
-  alert('오늘자 순위 스냅샷이 저장되었습니다. 내일부터 순위 변동이 표시됩니다.');
-}
-
 function setup() {
   $('#refresh').onclick = refresh;
   $('#adminRefresh').onclick = refresh;
@@ -484,17 +376,7 @@ function setup() {
     $('#penaltyValue').value = students.find(student => student.studentId === studentId)?.penalty || 0;
   };
   $('#savePenalty').onclick = () => admin && setPenalty().catch(error => alert(error.message));
-  $('#saveSnapshot').onclick = () => admin && saveSnapshotNow().catch(error => alert(error.message));
   $('#sheetLink').href = `https://docs.google.com/spreadsheets/d/${CONFIG.SHEET_ID}/edit`;
-
-  $('#battleModeToggle').onclick = () => {
-    battleMode = !battleMode;
-    battleSelection = [];
-    $('#classBattle').hidden = true;
-    $('#battleModeToggle').classList.toggle('active', battleMode);
-    $('#battleModeToggle').textContent = battleMode ? '⚔️ 대결 모드 ON (카드 2개 선택)' : '⚔️ 넥서스 대결 모드';
-    render();
-  };
 }
 
 async function refresh() {
