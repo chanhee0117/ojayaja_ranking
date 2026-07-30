@@ -269,17 +269,32 @@ function render() {
     </tr>
   `).join('');
 
-  $('#classCards').innerHTML = classGroups.map((group, index) => `
-    <button class="class" data-class="${group.class}">
-      <p>🏰 ${index + 1}위 · 2학년 ${group.class}반</p>
-      <strong>${group.final.toFixed(1)} RP</strong>
-      <p>총 ${group.hours}h · 평균 ${group.avg.toFixed(1)}h</p>
-      <small>반 벌점 ${group.penalty}점 · -${group.penalty.toFixed(1)}h</small>
-    </button>
-  `).join('');
+  const finals = classGroups.map(group => group.final);
+  const maxFinal = Math.max(...finals);
+  const minFinal = Math.min(...finals);
+  const span = (maxFinal - minFinal) || 1;
 
-  document.querySelectorAll('.class').forEach(card => {
-    card.onclick = () => showClass(Number(card.dataset.class));
+  $('#classCards').innerHTML = classGroups.map((group, index) => {
+    const pct = 14 + 86 * ((group.final - minFinal) / span);
+    const gap = maxFinal - group.final;
+    return `
+    <button class="race-row ${index === 0 ? 'lead' : ''}" data-class="${group.class}" style="--i:${index}">
+      <span class="race-rank">${index + 1}</span>
+      <span class="race-label">2학년 ${group.class}반<small>총 ${group.hours}h · 평균 ${group.avg.toFixed(1)}h · 반 벌점 ${group.penalty}점</small></span>
+      <span class="race-track"><span class="race-bar" data-pct="${pct}"></span></span>
+      <span class="race-score">${group.final.toFixed(1)}h</span>
+      <span class="race-gap">${index === 0 ? '👑 선두' : `−${gap.toFixed(1)}h`}</span>
+    </button>`;
+  }).join('');
+
+  document.querySelectorAll('.race-row').forEach(row => {
+    row.onclick = () => showClass(Number(row.dataset.class));
+  });
+
+  requestAnimationFrame(() => {
+    document.querySelectorAll('.race-bar').forEach(bar => {
+      bar.style.width = bar.dataset.pct + '%';
+    });
   });
 }
 
