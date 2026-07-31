@@ -22,12 +22,12 @@ const LP_PER_PENALTY = 20; // 벌점 1점당 LP 손실 (반 티어의 절반)
 
 // 벌점 자체에 대한 경고 문구 (승급전 티어와 별개로, 실제 징계 상태를 나타냄)
 function penaltyStatus(penalty) {
-  if (penalty >= 11) return '살고싶어요죽고싶어요(사망구간)';
-  if (penalty >= 9) return '진경꼬집기술범위(매우아픔)';
-  if (penalty >= 7) return '진경등짝범위(조금아픔)';
-  if (penalty >= 5) return '진경잔소리범위(듣기힘듬)';
-  if (penalty >= 3) return '진경위험구간시작';
-  if (penalty >= 1) return '벌점킁킁';
+  if (penalty >= 11) return '진경 사망(주체불가)';
+  if (penalty >= 9) return '진경꼬집기';
+  if (penalty >= 7) return '진경등짝';
+  if (penalty >= 5) return '진경잔소리';
+  if (penalty >= 3) return '!진경위험구간!';
+  if (penalty >= 1) return '스스로진정가능';
   return '진경진정구간';
 }
 
