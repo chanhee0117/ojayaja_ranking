@@ -15,8 +15,10 @@ const TIERS = [
   { name: 'Challenger', ko: '챌린저', color: '#ffe37a' }
 ];
 const START_TIER_INDEX = 3; // Gold
-const LP_PER_HOUR = 4;
-const LP_PER_PENALTY = 50;
+const TIER_BAND = 40;     // 티어 1단계당 필요한 LP (= 자습 40시간)
+const LP_PER_HOUR = 1;    // 자습 1시간 = LP 1점 (자습시수와 LP 수치를 동일하게)
+const LP_PER_PENALTY = 20; // 벌점 1점당 LP 손실 (반 티어의 절반)
+// 200시간(=LP 200)이면 Gold(idx3)에서 5단계 위인 Challenger(idx8)에 정확히 도달합니다.
 
 // 벌점 자체에 대한 경고 문구 (승급전 티어와 별개로, 실제 징계 상태를 나타냄)
 function penaltyStatus(penalty) {
@@ -38,20 +40,20 @@ const $ = selector => document.querySelector(selector);
 
 function computeTier(student) {
   const totalLP = student.hours * LP_PER_HOUR - student.penalty * LP_PER_PENALTY;
-  const offset = Math.floor(totalLP / 100);
+  const offset = Math.floor(totalLP / TIER_BAND);
   let idx = START_TIER_INDEX + offset;
   let lp;
   let prestige = false;
 
   if (idx >= TIERS.length - 1) {
     idx = TIERS.length - 1;
-    lp = totalLP - (idx - START_TIER_INDEX) * 100;
+    lp = totalLP - (idx - START_TIER_INDEX) * TIER_BAND;
     prestige = true;
   } else if (idx <= 0) {
     idx = 0;
     lp = 0;
   } else {
-    lp = ((totalLP % 100) + 100) % 100;
+    lp = ((totalLP % TIER_BAND) + TIER_BAND) % TIER_BAND;
   }
 
   return { idx, totalLP, lp, prestige, ...TIERS[idx] };
@@ -67,7 +69,7 @@ function tierNote(t) {
   const toDemote = Math.ceil((t.lp + 1) / LP_PER_PENALTY);
   if (toDemote <= 1) return `⚠️ 벌점 1점만 더 받으면 ${TIERS[t.idx - 1].ko}로 강등!`;
 
-  const hoursToPromote = Math.ceil((100 - t.lp) / LP_PER_HOUR);
+  const hoursToPromote = Math.ceil((TIER_BAND - t.lp) / LP_PER_HOUR);
   return `다음 승급까지 자습 ${hoursToPromote}시간 남음`;
 }
 
@@ -79,7 +81,7 @@ function badgeHtml(t, size = '') {
 }
 
 function gaugeHtml(t, size = '') {
-  const pct = t.prestige ? 100 : t.lp;
+  const pct = t.prestige ? 100 : Math.round((t.lp / TIER_BAND) * 100);
   return `<div class="gauge ${size}" style="--tier-color:${t.color}">
     <div class="gauge-track"><div class="gauge-fill" style="width:${pct}%"></div></div>
     <small>${tierNote(t)}</small>
@@ -184,7 +186,13 @@ async function load() {
   recentPromotions = server.recentPromotions;
 
   students = data.table.rows
-    .filter(row => row.c?.[2] && Number.isFinite(Number(row.c?.[0]?.v)) && Number.isFinite(Number(row.c?.[1]?.v)))
+    .filter(row =>
+      row.c?.[2] &&
+      Number.isFinite(Number(row.c?.[0]?.v)) &&
+      Number.isFinite(Number(row.c?.[1]?.v)) &&
+      Number.isFinite(Number(row.c?.[3]?.v)) &&
+      String(row.c?.[2]?.v).trim() !== '이름'
+    )
     .map(row => {
       const values = row.c.map(cell => cell?.v);
       const classNumber = Number(values[0]);
