@@ -22,13 +22,13 @@ const LP_PER_PENALTY = 20; // 벌점 1점당 LP 손실 (반 티어의 절반)
 
 // 벌점 자체에 대한 경고 문구 (승급전 티어와 별개로, 실제 징계 상태를 나타냄)
 function penaltyStatus(penalty) {
-  if (penalty >= 11) return '너 퇴출';
-  if (penalty >= 9) return '곧 퇴출임';
-  if (penalty >= 7) return '그만째자';
-  if (penalty >= 5) return '넌 안되겠다';
-  if (penalty >= 3) return '또 째?';
-  if (penalty >= 1) return '놀러가?';
-  return '무벌점 천상계';
+  if (penalty >= 11) return '퇴출 ㅃ';
+  if (penalty >= 9) return '곧 퇴출';
+  if (penalty >= 7) return '그만째자..';
+  if (penalty >= 5) return '닌 끝이야';
+  if (penalty >= 3) return '넌또벌점야르';
+  if (penalty >= 1) return '이걸째네ㅋㅋ벌점킁킁';
+  return '무벌점 진경보호범위';
 }
 
 let students = [];
