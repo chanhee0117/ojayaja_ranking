@@ -23,12 +23,12 @@ const LP_PER_PENALTY = 20; // 벌점 1점당 LP 손실 (반 티어의 절반)
 // 벌점 자체에 대한 경고 문구 (승급전 티어와 별개로, 실제 징계 상태를 나타냄)
 function penaltyStatus(penalty) {
   if (penalty >= 11) return '퇴출';
-  if (penalty >= 9) return '퇴출위기';
-  if (penalty >= 7) return '똥꼬킥';
-  if (penalty >= 5) return '꼬집기';
-  if (penalty >= 3) return '위험';
-  if (penalty >= 1) return '진정제';
-  return '진경쌤진정구간';
+  if (penalty >= 9) return '퇴출 위기';
+  if (penalty >= 7) return '면담 추천';
+  if (penalty >= 5) return '강등권';
+  if (penalty >= 3) return '관리 필요';
+  if (penalty >= 1) return '주의 구간';
+  return '무벌점 천상계';
 }
 
 let students = [];
@@ -59,7 +59,8 @@ function computeTier(student) {
   return { idx, totalLP, lp, prestige, ...TIERS[idx] };
 }
 
-const rankStudents = () => [...students].sort((a, b) => computeTier(b).totalLP - computeTier(a).totalLP || a.penalty - b.penalty);
+const RANK_PENALTY_WEIGHT = 2; // 전체 순위(개인 랭킹) 정렬 전용 — 티어 LP와 분리, 훨씬 완만하게 반영
+const rankStudents = () => [...students].sort((a, b) => (b.hours - b.penalty * RANK_PENALTY_WEIGHT) - (a.hours - a.penalty * RANK_PENALTY_WEIGHT) || a.penalty - b.penalty);
 const penaltyStudents = () => [...students].sort((a, b) => b.penalty - a.penalty || a.studentId.localeCompare(b.studentId));
 
 function tierNote(t) {
