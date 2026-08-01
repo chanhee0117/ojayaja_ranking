@@ -248,6 +248,11 @@ button:hover::before{left:130%}
 button:active{transform:translateY(0)}
 
 .scroll{max-height:520px;overflow:auto}
+/* filter/clip-path on an ancestor changes the containing block for position:sticky,
+   which was breaking the table header's sticky behavior inside scrolling panels.
+   Reset both specifically here so th{position:sticky} works correctly. */
+.panel.scroll{clip-path:none;filter:none;border-radius:13px}
+.panel.scroll::before,.panel.scroll::after{display:none}
 table{width:100%;min-width:760px;border-collapse:collapse}
 th,td{padding:15px;text-align:left;border-bottom:1px solid rgba(122,152,214,.14)}
 th{position:sticky;top:0;background:#0c1526;color:var(--muted);font-size:11px;letter-spacing:1px;text-transform:uppercase}
