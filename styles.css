@@ -31,16 +31,19 @@ html{scroll-behavior:smooth}
   *{animation-duration:.001ms !important;animation-iteration-count:1 !important;transition-duration:.001ms !important;scroll-behavior:auto !important}
 }
 
-body{
-  margin:0;color:var(--text);font-family:Pretendard,sans-serif;
+body {
+  margin: 0;
+  color: var(--text);
+  font-family: Pretendard, sans-serif;
   background:
     radial-gradient(1200px 640px at 10% -10%, rgba(63,217,199,.14), transparent 58%),
     radial-gradient(900px 520px at 105% 4%, rgba(139,123,255,.15), transparent 55%),
     radial-gradient(760px 440px at 50% 118%, rgba(232,197,116,.09), transparent 60%),
-    linear-gradient(180deg,rgba(2,4,9,.62),rgba(2,4,9,.58) 35%,rgba(2,4,9,.72) 75%,rgba(2,4,9,.9)),
-    /* 수정된 배경 이미지 파일명 반영 */
-    url('Gemini_Generated_Image_2hl132hl132hl132.png') center top/cover fixed no-repeat var(--bg);
-  overflow-x:hidden;
+    /* 이 부분의 투명도를 높여서 화질이 깨진 배경을 어둡게 눌러줍니다 */
+    linear-gradient(180deg, rgba(2,4,9,0.75), rgba(2,4,9,0.85) 40%, rgba(2,4,9,0.98) 80%),
+    /* cover 대신 100% auto를 주어 좌우 너비만 맞추고 원본 비율을 유지하게 합니다 */
+    url('Gemini_Generated_Image_2hl132hl132hl132.png') center top / 100% auto fixed no-repeat var(--bg);
+  overflow-x: hidden;
 }
 ::selection{background:var(--gold);color:#0a0e18}
 
