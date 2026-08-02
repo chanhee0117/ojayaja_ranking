@@ -264,7 +264,7 @@ function render() {
     return `
     <tr class="${student.penalty >= 11 ? 'expelled' : ''}">
       <td>#${index + 1}</td><td>${student.studentId}</td><td><b>${student.name}</b></td>
-      <td>2학년 ${student.class}반</td><td>${student.hours}h</td>
+      <td>${student.hours}h</td>
       <td class="danger">${student.penalty}점</td>
       <td>${tierCellHtml(student)}</td>
     </tr>`;
