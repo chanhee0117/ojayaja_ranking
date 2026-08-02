@@ -36,7 +36,7 @@ body{
     radial-gradient(1200px 640px at 10% -10%, rgba(63,217,199,.14), transparent 58%),
     radial-gradient(900px 520px at 105% 4%, rgba(139,123,255,.15), transparent 55%),
     radial-gradient(760px 440px at 50% 118%, rgba(232,197,116,.09), transparent 60%),
-    linear-gradient(180deg,rgba(2,4,9,.87),rgba(2,4,9,.98)),
+    linear-gradient(180deg,rgba(2,4,9,.62),rgba(2,4,9,.58) 35%,rgba(2,4,9,.72) 75%,rgba(2,4,9,.9)),
     url('rift-hero.png') center top/cover fixed no-repeat var(--bg);
   overflow-x:hidden;
 }
@@ -63,8 +63,8 @@ aside{
 .top,.race-row{clip-path: polygon(var(--cut-md) 0,100% 0,100% calc(100% - var(--cut-md)),calc(100% - var(--cut-md)) 100%,0 100%,0 var(--cut-md))}
 
 header{
-  position:sticky;top:0;z-index:50;background:rgba(4,7,14,.74);
-  border-bottom:1px solid var(--line);backdrop-filter:blur(18px) saturate(140%);
+  position:sticky;top:0;z-index:50;background:rgba(4,7,14,.58);
+  border-bottom:1px solid var(--line);backdrop-filter:blur(18px) saturate(140%);-webkit-backdrop-filter:blur(18px) saturate(140%);
 }
 header::after{
   content:'';display:block;position:absolute;left:0;right:0;bottom:-1px;height:1px;
@@ -136,9 +136,10 @@ h2::before{content:'';width:4px;height:20px;border-radius:1px;background:linear-
 .title{display:flex;justify-content:space-between;align-items:center}
 
 .panel{
-  background:linear-gradient(135deg,rgba(24,35,58,.92),rgba(7,11,21,.95));
+  background:linear-gradient(135deg,rgba(24,35,58,.58),rgba(7,11,21,.66));
   border:1px solid var(--line);
   filter:drop-shadow(0 16px 32px rgba(0,0,0,.5));
+  backdrop-filter:blur(14px) saturate(130%);-webkit-backdrop-filter:blur(14px) saturate(130%);
 }
 
 /* ---------------- 랭크 배지 ---------------- */
@@ -189,8 +190,9 @@ h2::before{content:'';width:4px;height:20px;border-radius:1px;background:linear-
 .top3{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;align-items:end}
 .top{
   padding:28px 20px 24px;text-align:center;
-  background:linear-gradient(135deg,rgba(24,35,58,.92),rgba(7,11,21,.95));
+  background:linear-gradient(135deg,rgba(24,35,58,.58),rgba(7,11,21,.66));
   border:1px solid var(--line);
+  backdrop-filter:blur(14px) saturate(130%);-webkit-backdrop-filter:blur(14px) saturate(130%);
   transition:transform .3s ease,filter .3s ease,border-color .3s ease;
 }
 .top:nth-child(1){order:2;transform:translateY(-18px);border-color:var(--line-strong)}
@@ -209,7 +211,7 @@ h2::before{content:'';width:4px;height:20px;border-radius:1px;background:linear-
 .top strong{display:block;margin:12px 0 2px;font-size:20px;font-family:var(--disp);font-weight:800;letter-spacing:.5px;color:var(--gold);text-shadow:0 0 14px rgba(232,197,116,.35)}
 
 /* ---------------- 최근 승급자 피드 ---------------- */
-.promo-feed{padding:8px;max-height:280px;background:linear-gradient(135deg,rgba(24,35,58,.92),rgba(7,11,21,.95));border:1px solid var(--line)}
+.promo-feed{padding:8px;max-height:280px;background:linear-gradient(135deg,rgba(24,35,58,.58),rgba(7,11,21,.66));border:1px solid var(--line)}
 .promo-item{
   display:flex;align-items:center;justify-content:space-between;gap:12px;
   padding:13px 16px;border-bottom:1px solid rgba(122,152,214,.12);
@@ -251,7 +253,10 @@ button:active{transform:translateY(0)}
 /* filter/clip-path on an ancestor changes the containing block for position:sticky,
    which was breaking the table header's sticky behavior inside scrolling panels.
    Reset both specifically here so th{position:sticky} works correctly. */
-.panel.scroll{clip-path:none;filter:none;border-radius:13px}
+.panel.scroll{
+  clip-path:none;filter:none;backdrop-filter:none;-webkit-backdrop-filter:none;border-radius:13px;
+  background:linear-gradient(135deg,rgba(20,30,52,.86),rgba(7,11,21,.92));
+}
 .panel.scroll::before,.panel.scroll::after{display:none}
 table{width:100%;min-width:760px;border-collapse:collapse}
 th,td{padding:15px;text-align:left;border-bottom:1px solid rgba(122,152,214,.14)}
@@ -269,7 +274,8 @@ tbody tr:hover::before{width:3px}
 .race-row{
   display:grid;grid-template-columns:32px minmax(120px,180px) 1fr 74px 92px;
   align-items:center;gap:16px;padding:15px 20px;width:100%;text-align:left;
-  background:linear-gradient(90deg,rgba(24,35,58,.85),rgba(9,13,24,.92));
+  background:linear-gradient(90deg,rgba(24,35,58,.55),rgba(9,13,24,.62));
+  backdrop-filter:blur(12px) saturate(130%);-webkit-backdrop-filter:blur(12px) saturate(130%);
   border:1px solid var(--line);color:var(--text);cursor:pointer;
   opacity:0;transform:translateX(-16px);
   animation:rowIn .5s ease forwards;animation-delay:calc(var(--i) * .09s);
@@ -300,14 +306,14 @@ tbody tr:hover::before{width:3px}
 .race-gap{font-family:var(--disp2);font-weight:700;font-size:12.5px;color:var(--muted);text-align:right;white-space:nowrap}
 .race-row.lead .race-gap{color:var(--gold)}
 
-.detail{margin-top:16px;padding:22px;animation:fadeUp .4s ease both;background:linear-gradient(135deg,rgba(24,35,58,.92),rgba(7,11,21,.95));border:1px solid var(--line)}
+.detail{margin-top:16px;padding:22px;animation:fadeUp .4s ease both;background:linear-gradient(135deg,rgba(24,35,58,.58),rgba(7,11,21,.66));border:1px solid var(--line)}
 .detail h3{margin:0 0 12px;font-size:17px}
 .detail li{padding:10px 4px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;align-items:center}
 .detail li:hover{background:rgba(232,197,116,.04)}
 .detail li span{color:var(--muted);font-size:13px}
 
 /* ---------------- 검색 ---------------- */
-.search{padding:26px;background:linear-gradient(135deg,rgba(24,35,58,.92),rgba(7,11,21,.95));border:1px solid var(--line)}
+.search{padding:26px;background:linear-gradient(135deg,rgba(24,35,58,.58),rgba(7,11,21,.66));border:1px solid var(--line)}
 .search form{display:flex;max-width:500px}
 .search input,aside input{padding:12px;background:#070c16;border:1px solid var(--line);color:#fff;border-radius:0;font:inherit;transition:border-color .2s ease,box-shadow .2s ease}
 .search input:focus,aside input:focus{outline:none;border-color:var(--gold);box-shadow:0 0 0 3px rgba(232,197,116,.18)}
@@ -326,7 +332,8 @@ footer{border-top:1px solid var(--line);padding:30px 20px;color:var(--muted);fon
 .admin{position:fixed;right:20px;bottom:20px;z-index:70;filter:drop-shadow(0 10px 26px rgba(0,0,0,.55))}
 aside{
   position:fixed;right:20px;bottom:74px;z-index:80;width:320px;padding:22px;
-  background:linear-gradient(160deg,#111c33,#0a1120);border:1px solid var(--line-strong);
+  background:linear-gradient(160deg,rgba(17,28,51,.72),rgba(10,17,32,.82));border:1px solid var(--line-strong);
+  backdrop-filter:blur(16px) saturate(130%);-webkit-backdrop-filter:blur(16px) saturate(130%);
   filter:drop-shadow(0 24px 50px rgba(0,0,0,.6)) drop-shadow(0 0 30px rgba(232,197,116,.1));
   animation:fadeUp .3s ease both;
 }
