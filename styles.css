@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@600;800;900&family=Rajdhani:wght@500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@600;800;900&family=Rajdhani:wght@500;600;700&family=Cinzel+Decorative:wght@700;900&family=Black+Han+Sans&display=swap');
 
 :root{
   --bg:#04060a;
@@ -17,6 +17,7 @@
   --danger:#ff5f79;
   --disp:'Orbitron',Pretendard,sans-serif;
   --disp2:'Rajdhani',Pretendard,sans-serif;
+  --disp-hero:'Cinzel Decorative','Black Han Sans',Pretendard,sans-serif;
   --cut:10px;   /* 일반 패널 절단 크기 */
   --cut-lg:24px;/* 히어로/쇼케이스 절단 크기 */
   --cut-md:15px;/* TOP3·반 대항전 카드 절단 크기 */
@@ -83,9 +84,10 @@ nav a:hover::after{width:100%}
 main{padding:0 20px 84px}
 
 /* ---------------- HERO (박스 없이 텍스트만) ---------------- */
-.hero{margin:54px 0 64px;max-width:640px}
+.hero{margin:54px auto 64px;max-width:760px;text-align:center}
 .hero h1{
-  font-size:52px;line-height:1.14;letter-spacing:-2.6px;margin:0 0 16px;
+  font-family:var(--disp-hero);
+  font-size:42px;line-height:1.3;letter-spacing:.5px;margin:0 0 18px;font-weight:900;
   background:linear-gradient(100deg,var(--text) 28%,var(--gold-soft) 52%,var(--text) 76%);
   background-size:220% auto;-webkit-background-clip:text;background-clip:text;color:transparent;
   animation:titleShine 7s ease-in-out infinite;
@@ -325,7 +327,7 @@ aside a:hover{color:var(--gold)}
   nav{display:none}
   .head{justify-content:space-between}
   .hero{margin:34px 0 44px}
-  .hero h1{font-size:33px;letter-spacing:-1.5px}
+  .hero h1{font-size:30px;letter-spacing:.3px}
   .top3{grid-template-columns:1fr}
   .top:nth-child(1){order:1;transform:none}
   .top:hover{transform:translateY(-6px)}
