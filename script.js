@@ -1,6 +1,7 @@
-/* ---------------- 승급전 LP 티어 시스템 ----------------
- * 골드에서 시작해서 자습시간으로 LP를 쌓아 승급하고, 벌점으로 LP를 잃어 강등됩니다.
- * ⚠️ TIERS 순서, START_TIER_INDEX, LP_PER_HOUR, LP_PER_PENALTY는
+/* ---------------- 승급전 티어 시스템 (자습시수 기준) ----------------
+ * 골드에서 시작해서 자습시간이 쌓이면 승급하고, 벌점을 받으면 강등됩니다.
+ * LP 같은 별도 포인트 개념 없이, 전부 "시간" 단위로만 계산합니다.
+ * ⚠️ TIERS 순서, START_TIER_INDEX, HOURS_PER_PENALTY는
  *    Code.gs와 반드시 같은 값을 유지해야 승급 로그가 정확합니다.
  */
 const TIERS = [
@@ -15,10 +16,9 @@ const TIERS = [
   { name: 'Challenger', ko: '챌린저', color: '#ffe37a' }
 ];
 const START_TIER_INDEX = 3; // Gold
-const TIER_BAND = 40;     // 티어 1단계당 필요한 LP (= 자습 40시간)
-const LP_PER_HOUR = 1;    // 자습 1시간 = LP 1점 (자습시수와 LP 수치를 동일하게)
-const LP_PER_PENALTY = 20; // 벌점 1점당 LP 손실 (반 티어의 절반)
-// 200시간(=LP 200)이면 Gold(idx3)에서 5단계 위인 Challenger(idx8)에 정확히 도달합니다.
+const TIER_BAND = 40;          // 티어 1단계당 필요한 자습시간 (시간)
+const HOURS_PER_PENALTY = 20;  // 벌점 1점당 차감되는 자습시간 환산치 (시간)
+// 200시간이면 Gold(idx3)에서 5단계 위인 Challenger(idx8)에 정확히 도달합니다.
 
 // 벌점 자체에 대한 경고 문구 (승급전 티어와 별개로, 실제 징계 상태를 나타냄)
 function penaltyStatus(penalty) {
@@ -39,50 +39,51 @@ let recentPromotions = [];
 const $ = selector => document.querySelector(selector);
 
 function computeTier(student) {
-  const totalLP = student.hours * LP_PER_HOUR - student.penalty * LP_PER_PENALTY;
-  const offset = Math.floor(totalLP / TIER_BAND);
+  const totalHours = student.hours - student.penalty * HOURS_PER_PENALTY;
+  const offset = Math.floor(totalHours / TIER_BAND);
   let idx = START_TIER_INDEX + offset;
-  let lp;
+  let hoursIn;
   let prestige = false;
 
   if (idx >= TIERS.length - 1) {
     idx = TIERS.length - 1;
-    lp = totalLP - (idx - START_TIER_INDEX) * TIER_BAND;
+    hoursIn = totalHours - (idx - START_TIER_INDEX) * TIER_BAND;
     prestige = true;
   } else if (idx <= 0) {
     idx = 0;
-    lp = 0;
+    hoursIn = 0;
   } else {
-    lp = ((totalLP % TIER_BAND) + TIER_BAND) % TIER_BAND;
+    hoursIn = ((totalHours % TIER_BAND) + TIER_BAND) % TIER_BAND;
   }
 
-  return { idx, totalLP, lp, prestige, ...TIERS[idx] };
+  return { idx, totalHours, hoursIn, prestige, ...TIERS[idx] };
 }
 
-const RANK_PENALTY_WEIGHT = 2; // 전체 순위(개인 랭킹) 정렬 전용 — 티어 LP와 분리, 훨씬 완만하게 반영
+const RANK_PENALTY_WEIGHT = 2; // 전체 순위(개인 랭킹) 정렬 전용 — 티어 시스템과 분리, 훨씬 완만하게 반영
 const rankStudents = () => [...students].sort((a, b) => (b.hours - b.penalty * RANK_PENALTY_WEIGHT) - (a.hours - a.penalty * RANK_PENALTY_WEIGHT) || a.penalty - b.penalty);
 const penaltyStudents = () => [...students].sort((a, b) => b.penalty - a.penalty || a.studentId.localeCompare(b.studentId));
 
 function tierNote(t) {
-  if (t.prestige) return '🔥 최고 티어 유지 중';
+  if (t.prestige) return `🔥 최고 티어 유지 중 · 자습 ${Math.round(t.hoursIn)}시간 초과 달성`;
   if (t.idx === 0) return '⚠️ 최저 티어 · 추가 벌점 시 즉시 면담 필요';
 
-  const toDemote = Math.ceil((t.lp + 1) / LP_PER_PENALTY);
+  const toDemote = Math.ceil((t.hoursIn + 1) / HOURS_PER_PENALTY);
   if (toDemote <= 1) return `⚠️ 벌점 1점만 더 받으면 ${TIERS[t.idx - 1].ko}로 강등!`;
 
-  const hoursToPromote = Math.ceil((TIER_BAND - t.lp) / LP_PER_HOUR);
+  const hoursToPromote = Math.ceil(TIER_BAND - t.hoursIn);
   return `다음 승급까지 자습 ${hoursToPromote}시간 남음`;
 }
 
 function badgeHtml(t, size = '') {
+  const progress = t.prestige ? `+${Math.round(t.hoursIn)}h` : `${Math.round(t.hoursIn)}/${TIER_BAND}h`;
   return `<span class="rank-badge ${size}" style="--tier-color:${t.color}">
     <span class="badge-shield"></span>
-    <span class="badge-text"><b>${t.ko}</b><small>${Math.round(t.lp)} LP</small></span>
+    <span class="badge-text"><b>${t.ko}</b><small>${progress}</small></span>
   </span>`;
 }
 
 function gaugeHtml(t, size = '') {
-  const pct = t.prestige ? 100 : Math.round((t.lp / TIER_BAND) * 100);
+  const pct = t.prestige ? 100 : Math.round((t.hoursIn / TIER_BAND) * 100);
   return `<div class="gauge ${size}" style="--tier-color:${t.color}">
     <div class="gauge-track"><div class="gauge-fill" style="width:${pct}%"></div></div>
     <small>${tierNote(t)}</small>
@@ -253,7 +254,7 @@ function render() {
       <h3>${student.name}</h3>
       <span>${student.studentId} · 2학년 ${student.class}반</span>
       ${badgeHtml(t, 'sm')}
-      <strong>${Math.round(t.lp)} LP</strong>
+      <strong>${student.hours}h</strong>
       ${gaugeHtml(t, 'sm')}
     </article>`;
   }).join('');
@@ -265,7 +266,6 @@ function render() {
       <td>#${index + 1}</td><td>${student.studentId}</td><td><b>${student.name}</b></td>
       <td>2학년 ${student.class}반</td><td>${student.hours}h</td>
       <td class="danger">${student.penalty}점</td>
-      <td>${Math.round(t.lp)} LP</td>
       <td>${tierCellHtml(student)}</td>
     </tr>`;
   }).join('');
@@ -314,7 +314,7 @@ function showClass(classNumber) {
   $('#classDetail').hidden = false;
   $('#classDetail').innerHTML = `<h3>🏰 2학년 ${classNumber}반 · ${classRank}위</h3><ol>${classStudents.map((student, index) => {
     const t = computeTier(student);
-    return `<li>#${index + 1} <b>${student.studentId} ${student.name}</b><span>${t.ko} · ${Math.round(t.lp)}LP · 벌점 ${student.penalty}</span></li>`;
+    return `<li>#${index + 1} <b>${student.studentId} ${student.name}</b><span>${t.ko} · ${student.hours}h · 벌점 ${student.penalty}</span></li>`;
   }).join('')}</ol>`;
 }
 
