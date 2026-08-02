@@ -33,21 +33,18 @@ html{scroll-behavior:smooth}
 
 body{
   margin:0;color:var(--text);font-family:Pretendard,sans-serif;
-  /* 배경 이미지 속성을 개별적으로 분리하여 모바일 제어가 쉽도록 변경 */
-  background-image:
+  background:
     radial-gradient(1200px 640px at 10% -10%, rgba(63,217,199,.14), transparent 58%),
     radial-gradient(900px 520px at 105% 4%, rgba(139,123,255,.15), transparent 55%),
     radial-gradient(760px 440px at 50% 118%, rgba(232,197,116,.09), transparent 60%),
-    /* 아래로 갈수록 어두워지는 그라데이션 추가 (화질 보완 및 자연스러운 페이드아웃 효과) */
-    linear-gradient(180deg, rgba(2,4,9,0.7), rgba(2,4,9,0.85) 40%, rgba(2,4,9,1) 80%),
-    /* 새로운 파일명 반영 */
-    url('leagueof.jpg'); 
-  background-position: center top;
-  background-repeat: no-repeat;
-  background-attachment: fixed;
-  background-size: 100% auto;
-  background-color: var(--bg);
+    linear-gradient(180deg,rgba(2,4,9,.62),rgba(2,4,9,.58) 35%,rgba(2,4,9,.72) 75%,rgba(2,4,9,.9)),
+    url('leagueof.jpg') center top/cover scroll no-repeat var(--bg);
   overflow-x:hidden;
+}
+/* background-attachment:fixed은 모바일 사파리에서 깨지거나 안 뜨는 경우가 많아서
+   데스크톱에서만 켜고, 모바일은 기본값(scroll)으로 둡니다. */
+@media(min-width:701px){
+  body{background-attachment:fixed}
 }
 ::selection{background:var(--gold);color:#0a0e18}
 
@@ -55,7 +52,10 @@ body{
 .scroll::-webkit-scrollbar-track{background:rgba(255,255,255,.03)}
 .scroll::-webkit-scrollbar-thumb{background:linear-gradient(var(--gold-deep),var(--gold));border-radius:8px}
 
-/* ============ 각진(clip-path) 패널 시스템 ============ */
+/* ============ 각진(clip-path) 패널 시스템 ============
+ * 좌상단·우하단을 대각선으로 잘라내는 방식으로 통일 (게임 HUD 특유의 실루엣).
+ * 우상단·좌하단은 직각으로 남겨 코너 브라켓 장식을 배치.
+ */
 .panel,
 .top,
 .race-row,
@@ -88,23 +88,27 @@ nav a:hover::after{width:100%}
 
 main{padding:0 20px 84px}
 
-/* ---------------- HERO ---------------- */
+/* ---------------- HERO (박스 없이 텍스트만) ---------------- */
 .hero{margin:54px auto 64px;max-width:760px;text-align:center}
-.hero-logo {
-  max-width: 100%;
-  width: 520px; 
-  height: auto;
-  margin-bottom: 24px;
-  filter: drop-shadow(0 6px 28px rgba(0,0,0,0.8)) drop-shadow(0 0 15px rgba(232,197,116,0.3));
-  animation: logoFloat 4s ease-in-out infinite;
+.hero-logo{
+  max-width:100%;width:520px;height:auto;margin-bottom:24px;
+  filter:drop-shadow(0 6px 28px rgba(0,0,0,.8)) drop-shadow(0 0 15px rgba(232,197,116,.3));
+  animation:logoFloat 4s ease-in-out infinite;
 }
-@keyframes logoFloat {
-  0%, 100% { transform: translateY(0); }
-  50% { transform: translateY(-10px); }
+@keyframes logoFloat{0%,100%{transform:translateY(0)}50%{transform:translateY(-10px)}}
+.hero h1{
+  font-family:var(--disp-hero);
+  font-size:42px;line-height:1.3;letter-spacing:.5px;margin:0 0 18px;font-weight:900;
+  background:linear-gradient(100deg,var(--text) 28%,var(--gold-soft) 52%,var(--text) 76%);
+  background-size:220% auto;-webkit-background-clip:text;background-clip:text;color:transparent;
+  animation:titleShine 7s ease-in-out infinite;
+  filter:drop-shadow(0 4px 24px rgba(0,0,0,.5));
 }
+@keyframes titleShine{0%,100%{background-position:0 0}50%{background-position:100% 0}}
 .hero span{display:block;color:var(--text);font-size:16.5px;text-shadow:0 2px 12px rgba(0,0,0,.6)}
 .hint{color:var(--muted)}
 
+/* 코너 브라켓 (우상단·좌하단 — 각진 컷이 없는 두 모서리) */
 .panel,.top,.race-row,.detail,.promo-feed,.search,aside{position:relative}
 .panel::before,.top::before,.race-row::before,.detail::before,.promo-feed::before,.search::before,aside::before{
   content:'';position:absolute;top:0;right:0;width:15px;height:15px;
@@ -230,72 +234,122 @@ button{
   overflow:hidden;filter:drop-shadow(0 8px 16px rgba(63,217,199,.3));transition:transform .2s ease,filter .2s ease;
   clip-path: polygon(var(--cut-sm) 0,100% 0,100% calc(100% - var(--cut-sm)),calc(100% - var(--cut-sm)) 100%,0 100%,0 var(--cut-sm));
 }
-button::before{content:'';position:absolute;top:0;left:-60%;width:40%;heightPC와 모바일 모두에서 배경 이미지가 깨지거나 잘리지 않고 자연스럽게 꽉 차 보이도록 CSS를 설정한 최종 코드입니다. 
+button::before{content:'';position:absolute;top:0;left:-60%;width:40%;height:100%;background:linear-gradient(115deg,transparent,rgba(255,255,255,.5),transparent);transform:skewX(-20deg);transition:left .5s ease}
+button:hover{transform:translateY(-2px);filter:drop-shadow(0 12px 22px rgba(63,217,199,.42))}
+button:hover::before{left:130%}
+button:active{transform:translateY(0)}
 
-모바일 반응형의 핵심인 `background-size: cover;`와 `background-position: center;` 속성을 적용했으며, 스마트폰에서 스크롤할 때 배경이 어색해지는 것을 막기 위해 `background-attachment: fixed;`를 추가했습니다.
+.scroll{max-height:520px;overflow:auto}
+/* filter/clip-path on an ancestor changes the containing block for position:sticky,
+   which was breaking the table header's sticky behavior inside scrolling panels.
+   Reset both specifically here so th{position:sticky} works correctly. */
+.panel.scroll{
+  clip-path:none;filter:none;backdrop-filter:none;-webkit-backdrop-filter:none;border-radius:13px;
+  background:linear-gradient(135deg,rgba(20,30,52,.86),rgba(7,11,21,.92));
+}
+.panel.scroll::before,.panel.scroll::after{display:none}
+table{width:100%;min-width:760px;border-collapse:collapse}
+th,td{padding:15px;text-align:left;border-bottom:1px solid rgba(122,152,214,.14)}
+th{position:sticky;top:0;background:#0c1526;color:var(--muted);font-size:11px;letter-spacing:1px;text-transform:uppercase}
+tbody tr{position:relative;transition:background .2s ease}
+tbody tr::before{content:'';position:absolute;left:0;top:0;bottom:0;width:0;background:linear-gradient(var(--teal),var(--gold));transition:width .25s ease}
+tbody tr:hover{background:rgba(63,217,199,.05)}
+tbody tr:hover::before{width:3px}
+.danger,.expelled{color:var(--danger)}
+.expelled{background:linear-gradient(90deg,rgba(255,95,121,.08),transparent 60%)}
+.expelled:hover{background:linear-gradient(90deg,rgba(255,95,121,.14),transparent 60%) !important}
 
-적용하시는 파일의 확장자(예: `.jpg`, `.png` 등)에 맞게 코드 내의 파일명 부분만 살짝 수정해서 사용하시면 됩니다.
+/* ---------------- 반 대항전 · 실시간 개표 그래프 ---------------- */
+.race-board{display:flex;flex-direction:column;gap:11px}
+.race-row{
+  display:grid;grid-template-columns:32px minmax(120px,180px) 1fr 74px 92px;
+  align-items:center;gap:16px;padding:15px 20px;width:100%;text-align:left;
+  background:linear-gradient(90deg,rgba(24,35,58,.55),rgba(9,13,24,.62));
+  backdrop-filter:blur(12px) saturate(130%);-webkit-backdrop-filter:blur(12px) saturate(130%);
+  border:1px solid var(--line);color:var(--text);cursor:pointer;
+  opacity:0;transform:translateX(-16px);
+  animation:rowIn .5s ease forwards;animation-delay:calc(var(--i) * .09s);
+  transition:transform .25s ease,border-color .25s ease,filter .25s ease;
+  filter:drop-shadow(0 10px 22px rgba(0,0,0,.4));
+}
+@keyframes rowIn{to{opacity:1;transform:translateX(0)}}
+.race-row:hover{transform:translateX(5px);border-color:var(--teal)}
+.race-row.lead{border-color:var(--gold);filter:drop-shadow(0 10px 22px rgba(0,0,0,.4)) drop-shadow(0 0 22px rgba(232,197,116,.24))}
+.race-rank{font-family:var(--disp);font-weight:900;font-size:19px;color:var(--muted);text-align:center}
+.race-row.lead .race-rank{color:var(--gold);text-shadow:0 0 12px rgba(232,197,116,.5)}
+.race-label{display:flex;flex-direction:column;gap:2px;font-weight:700;font-size:14.5px;white-space:nowrap}
+.race-label small{font-weight:500;font-size:11px;color:var(--muted);white-space:normal}
+.race-track{position:relative;height:15px;border-radius:2px;background:rgba(255,255,255,.06);overflow:hidden;box-shadow:inset 0 2px 5px #0009;border:1px solid rgba(255,255,255,.05)}
+.race-bar{
+  position:absolute;left:0;top:0;bottom:0;width:0;border-radius:1px;
+  background:linear-gradient(90deg,var(--blue),var(--teal));
+  transition:width 1.2s cubic-bezier(.16,1,.3,1);
+}
+.race-row.lead .race-bar{background:linear-gradient(90deg,var(--gold-deep),var(--gold-soft))}
+.race-bar::after{
+  content:'';position:absolute;inset:0;
+  background:linear-gradient(100deg,transparent 30%,rgba(255,255,255,.4) 50%,transparent 70%);
+  background-size:220% 100%;animation:barShine 2.6s ease-in-out infinite;
+}
+@keyframes barShine{0%,100%{background-position:0% 0}50%{background-position:100% 0}}
+.race-score{font-family:var(--disp);font-weight:800;font-size:15px;text-align:right;color:var(--text)}
+.race-gap{font-family:var(--disp2);font-weight:700;font-size:12.5px;color:var(--muted);text-align:right;white-space:nowrap}
+.race-row.lead .race-gap{color:var(--gold)}
 
-```html
-<!DOCTYPE html>
-<html lang="ko">
-<head>
-    <meta charset="UTF-8">
-    <!-- 모바일 기기에서 올바른 비율로 보이게 하는 필수 태그 -->
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>웹페이지 제목</title>
-    <style>
-        /* 기본 여백 제거 및 배경 설정 */
-        body {
-            margin: 0;
-            padding: 0;
+.detail{margin-top:16px;padding:22px;animation:fadeUp .4s ease both;background:linear-gradient(135deg,rgba(24,35,58,.58),rgba(7,11,21,.66));border:1px solid var(--line)}
+.detail h3{margin:0 0 12px;font-size:17px}
+.detail li{padding:10px 4px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;align-items:center}
+.detail li:hover{background:rgba(232,197,116,.04)}
+.detail li span{color:var(--muted);font-size:13px}
 
-            /* 배경 이미지 지정 (실제 파일 확장자에 맞게 .jpg나 .png로 수정해주세요) */
-            background-image: url('leagueof.jpg'); 
-            
-            /* 이미지가 화면 비율에 맞게 꽉 차도록 설정 */
-            background-size: cover; 
-            
-            /* 이미지의 중심을 기준으로 보여주도록 정렬 */
-            background-position: center; 
-            
-            /* 배경 이미지가 바둑판처럼 반복되지 않도록 설정 */
-            background-repeat: no-repeat; 
-            
-            /* 모바일에서 스크롤을 내려도 배경 이미지가 고정되도록 설정 */
-            background-attachment: fixed; 
-            
-            /* 화면의 최소 높이를 기기 화면 전체 높이로 꽉 채움 */
-            min-height: 100vh;
-            
-            /* 텍스트 기본 색상 설정 */
-            color: #ffffff; 
-        }
+/* ---------------- 검색 ---------------- */
+.search{padding:26px;background:linear-gradient(135deg,rgba(24,35,58,.58),rgba(7,11,21,.66));border:1px solid var(--line)}
+.search form{display:flex;max-width:500px}
+.search input,aside input{padding:12px;background:#070c16;border:1px solid var(--line);color:#fff;border-radius:0;font:inherit;transition:border-color .2s ease,box-shadow .2s ease}
+.search input:focus,aside input:focus{outline:none;border-color:var(--gold);box-shadow:0 0 0 3px rgba(232,197,116,.18)}
+.search input{flex:1}
+.search-tier{display:flex;align-items:center;gap:18px;margin-top:18px;padding:16px 18px;border:1px solid var(--line);background:rgba(255,255,255,.02);clip-path: polygon(var(--cut) 0,100% 0,100% calc(100% - var(--cut)),calc(100% - var(--cut)) 100%,0 100%,0 var(--cut))}
+.search-tier .gauge{flex:1;margin-top:0}
+.result{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;margin-top:16px;background:var(--line);overflow:hidden}
+.result div{padding:15px;background:rgba(11,18,34,.92);transition:background .2s ease}
+.result div:hover{background:rgba(232,197,116,.06)}
+.result span{display:block;color:var(--muted);font-size:11px;letter-spacing:.3px}
+.result b{font-size:14.5px}
 
-        /* 콘텐츠 영역 중앙 정렬 및 가독성을 위한 반투명 박스 (필요시 사용) */
-        .content-wrap {
-            max-width: 800px;
-            margin: 0 auto; /* 가로 중앙 정렬 */
-            padding: 20px;
-            
-            /* 배경 이미지가 화려할 경우 텍스트가 잘 보이도록 반투명한 검은색 배경 깔기 */
-            background-color: rgba(0, 0, 0, 0.6); 
-            border-radius: 12px;
-            
-            /* 위아래 여백 */
-            margin-top: 5vh; 
-            margin-bottom: 5vh;
-        }
-    </style>
-</head>
-<body>
+footer{border-top:1px solid var(--line);padding:30px 20px;color:var(--muted);font-size:12px;text-align:center}
 
-    <!-- 실제 내용이 들어가는 부분 -->
-    <div class="content-wrap">
-        <h2>안녕하세요!</h2>
-        <p>PC와 모바일 환경 모두에서 배경화면이 자연스럽게 적용됩니다.</p>
-        <p>기존에 작성하셨던 내용을 이 div 태그 안쪽에 넣어주시면 됩니다.</p>
-    </div>
+/* ---------------- 관리자 ---------------- */
+.admin{position:fixed;right:20px;bottom:20px;z-index:70;filter:drop-shadow(0 10px 26px rgba(0,0,0,.55))}
+aside{
+  position:fixed;right:20px;bottom:74px;z-index:80;width:320px;padding:22px;
+  background:linear-gradient(160deg,rgba(17,28,51,.72),rgba(10,17,32,.82));border:1px solid var(--line-strong);
+  backdrop-filter:blur(16px) saturate(130%);-webkit-backdrop-filter:blur(16px) saturate(130%);
+  filter:drop-shadow(0 24px 50px rgba(0,0,0,.6)) drop-shadow(0 0 30px rgba(232,197,116,.1));
+  animation:fadeUp .3s ease both;
+}
+aside h2{font-size:16px}
+aside input,aside button,aside a{width:100%;margin:6px 0}
+aside a{color:var(--teal);text-align:center;display:block;font-size:12.5px;text-decoration:none}
+aside a:hover{color:var(--gold)}
+#closeAdmin{float:right;width:auto;background:transparent;filter:none;color:var(--muted);font-size:18px;padding:2px 8px;clip-path:none}
+#closeAdmin:hover{color:var(--danger)}
 
-</body>
-</html>
+@media(max-width:700px){
+  nav{display:none}
+  .head{justify-content:space-between}
+  .hero{margin:34px 0 44px}
+  .hero-logo{width:280px;margin-bottom:16px}
+  .hero h1{font-size:30px;letter-spacing:.3px}
+  .top3{grid-template-columns:1fr}
+  .top:nth-child(1){order:1;transform:none}
+  .top:hover{transform:translateY(-6px)}
+  .race-row{grid-template-columns:26px 1fr auto;grid-template-areas:"rank label score" "rank track track" "rank gap gap";row-gap:8px}
+  .race-rank{grid-area:rank}
+  .race-label{grid-area:label}
+  .race-score{grid-area:score}
+  .race-track{grid-area:track}
+  .race-gap{grid-area:gap;text-align:left}
+  .result{grid-template-columns:1fr 1fr}
+  .search-tier{flex-direction:column;align-items:flex-start}
+  #updated{font-size:10px}
+}
