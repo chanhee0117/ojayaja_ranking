@@ -59,7 +59,6 @@ body{
 aside{
   clip-path: polygon(var(--cut) 0,100% 0,100% calc(100% - var(--cut)),calc(100% - var(--cut)) 100%,0 100%,0 var(--cut));
 }
-.hero{clip-path: polygon(var(--cut-lg) 0,100% 0,100% calc(100% - var(--cut-lg)),calc(100% - var(--cut-lg)) 100%,0 100%,0 var(--cut-lg))}
 .top,.race-row{clip-path: polygon(var(--cut-md) 0,100% 0,100% calc(100% - var(--cut-md)),calc(100% - var(--cut-md)) 100%,0 100%,0 var(--cut-md))}
 
 header{
@@ -83,43 +82,21 @@ nav a:hover::after{width:100%}
 
 main{padding:0 20px 84px}
 
-/* ---------------- HERO ---------------- */
-.hero{
-  margin:30px 0 58px;padding:112px 54px 92px;position:relative;overflow:hidden;
-  background:
-    linear-gradient(100deg,rgba(3,6,14,.96) 38%,rgba(3,6,14,.5)),
-    radial-gradient(760px 460px at 88% 14%, rgba(63,217,199,.22), transparent 60%),
-    radial-gradient(520px 360px at 8% 90%, rgba(232,197,116,.14), transparent 62%);
-  filter:drop-shadow(0 30px 70px rgba(0,0,0,.55));
-}
-.hero::before{
-  content:'';position:absolute;inset:0;pointer-events:none;z-index:1;
-  background:
-    repeating-linear-gradient(115deg, rgba(255,255,255,.045) 0 1.5px, transparent 1.5px 46px),
-    linear-gradient(115deg,transparent 42%,rgba(232,197,116,.08) 50%,transparent 58%);
-  background-size:auto,220% 220%;
-  mix-blend-mode:overlay;
-  animation:heroSheen 9s ease-in-out infinite;
-}
-@keyframes heroSheen{0%,100%{background-position:0 0,0% 0%}50%{background-position:0 0,100% 100%}}
-.hero::after{
-  content:'';position:absolute;left:8%;right:8%;top:0;height:1px;z-index:1;
-  background:linear-gradient(90deg,transparent,var(--teal),var(--gold),transparent);
-  opacity:.6;
-}
-.hero p{position:relative;z-index:2;margin:0;color:var(--teal);font-size:11.5px;letter-spacing:5px;font-weight:800;font-family:var(--disp);text-shadow:0 0 14px rgba(63,217,199,.45)}
+/* ---------------- HERO (박스 없이 텍스트만) ---------------- */
+.hero{margin:54px 0 64px;max-width:640px}
 .hero h1{
-  position:relative;z-index:2;font-size:52px;line-height:1.14;letter-spacing:-2.6px;margin:16px 0;
+  font-size:52px;line-height:1.14;letter-spacing:-2.6px;margin:0 0 16px;
   background:linear-gradient(100deg,var(--text) 28%,var(--gold-soft) 52%,var(--text) 76%);
   background-size:220% auto;-webkit-background-clip:text;background-clip:text;color:transparent;
   animation:titleShine 7s ease-in-out infinite;
+  filter:drop-shadow(0 4px 24px rgba(0,0,0,.5));
 }
 @keyframes titleShine{0%,100%{background-position:0 0}50%{background-position:100% 0}}
-.hero span{position:relative;z-index:2;display:block;color:var(--muted);font-size:15.5px}
+.hero span{display:block;color:var(--text);font-size:16.5px;text-shadow:0 2px 12px rgba(0,0,0,.6)}
 .hint{color:var(--muted)}
 
 /* 코너 브라켓 (우상단·좌하단 — 각진 컷이 없는 두 모서리) */
-.panel,.top,.race-row,.hero,.detail,.promo-feed,.search,aside{position:relative}
+.panel,.top,.race-row,.detail,.promo-feed,.search,aside{position:relative}
 .panel::before,.top::before,.race-row::before,.detail::before,.promo-feed::before,.search::before,aside::before{
   content:'';position:absolute;top:0;right:0;width:15px;height:15px;
   border-top:2px solid var(--teal);border-right:2px solid var(--teal);opacity:.8;pointer-events:none;
@@ -347,7 +324,7 @@ aside a:hover{color:var(--gold)}
 @media(max-width:700px){
   nav{display:none}
   .head{justify-content:space-between}
-  .hero{padding:72px 28px}
+  .hero{margin:34px 0 44px}
   .hero h1{font-size:33px;letter-spacing:-1.5px}
   .top3{grid-template-columns:1fr}
   .top:nth-child(1){order:1;transform:none}
