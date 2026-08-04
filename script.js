@@ -263,7 +263,7 @@ function render() {
     const t = computeTier(student);
     return `
     <tr class="${student.penalty >= 11 ? 'expelled' : ''}">
-      <td>#${index + 1}</td><td>${student.studentId}</td><td><b>${student.name}</b></td>
+      <td>${student.studentId}</td><td>#${index + 1}</td><td><b>${student.name}</b></td>
       <td>${student.hours}h</td>
       <td class="danger">${student.penalty}점</td>
       <td>${tierCellHtml(student)}</td>
@@ -272,7 +272,7 @@ function render() {
 
   $('#penaltyRankingBody').innerHTML = penaltyRanked.map((student, index) => `
     <tr class="${student.penalty >= 11 ? 'expelled' : ''}">
-      <td>#${index + 1}</td><td>${student.studentId}</td><td><b>${student.name}</b></td>
+      <td>${student.studentId}</td><td>#${index + 1}</td><td><b>${student.name}</b></td>
       <td>2학년 ${student.class}반</td><td class="danger">${student.penalty}점</td>
       <td>${penaltyStatus(student.penalty)}</td>
     </tr>
