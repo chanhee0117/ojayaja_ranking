@@ -89,9 +89,9 @@ nav a:hover::after{width:100%}
 main{padding:0 20px 84px}
 
 /* ---------------- HERO (박스 없이 텍스트만) ---------------- */
-.hero{margin:54px auto 64px;max-width:760px;text-align:center}
+.hero{margin:54px auto 64px;max-width:760px;display:flex;flex-direction:column;align-items:center;text-align:center}
 .hero-logo{
-  max-width:100%;width:520px;height:auto;margin-bottom:24px;
+  display:block;max-width:100%;width:520px;height:auto;margin:0 auto 20px;
   filter:drop-shadow(0 6px 28px rgba(0,0,0,.8)) drop-shadow(0 0 15px rgba(232,197,116,.3));
   animation:logoFloat 4s ease-in-out infinite;
 }
