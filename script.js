@@ -101,7 +101,7 @@ function renderPromotions() {
   if (!el) return;
 
   if (!recentPromotions.length) {
-    el.innerHTML = '<p class="hint">아직 승급 기록이 없습니다. 자습을 많이 할수록 승급 소식이 쌓여요!</p>';
+    el.innerHTML = '<p class="hint"> 승급 기록이 없습니다.</p>';
     return;
   }
 
@@ -211,7 +211,7 @@ async function load() {
       };
     });
 
-  $('#updated').textContent = '📅 마지막 업데이트 : ' + new Intl.DateTimeFormat('ko-KR', {
+  $('#updated').textContent = ' 마지막 업데이트 : ' + new Intl.DateTimeFormat('ko-KR', {
     dateStyle: 'short',
     timeStyle: 'short'
   }).format(new Date());
@@ -390,7 +390,7 @@ function setup() {
   $('#closeAdmin').onclick = () => { $('#admin').hidden = true; };
   $('#loginForm').onsubmit = event => {
     event.preventDefault();
-    if ($('#password').value !== ADMIN_PASSWORD) return alert('비밀번호가 올바르지 않습니다.');
+    if ($('#password').value !== ADMIN_PASSWORD) return alert('걸리면 뒤진다');
     admin = true;
     $('#loginForm').hidden = true;
     $('#adminTools').hidden = false;
