@@ -371,4 +371,46 @@ aside a:hover{color:var(--gold)}
   .result{grid-template-columns:1fr 1fr}
   .search-tier{flex-direction:column;align-items:flex-start}
   #updated{font-size:10px}
+
+  /* ---- 표 → 카드 변환 (모바일 대각선 스크롤 문제 해결) ----
+     가로 스크롤이 필요 없도록 표를 카드 리스트로 완전히 재구성.
+     라벨은 데이터를 건드리지 않고 위치 기반 ::before로 표시. */
+  .panel.scroll{max-height:62vh}
+  table{min-width:0;width:100%;border-collapse:separate;border-spacing:0}
+  thead{display:none}
+  tbody{display:block}
+  tbody tr{
+    display:block;padding:14px 16px;margin:10px;border-radius:10px;
+    background:linear-gradient(135deg,rgba(24,35,58,.6),rgba(7,11,21,.68));
+    border:1px solid var(--line);
+  }
+  tbody tr::before{display:none}
+  td{
+    display:flex;align-items:center;justify-content:space-between;gap:12px;
+    padding:7px 0;border-bottom:1px solid rgba(122,152,214,.1);
+    text-align:right;
+  }
+  td:last-child{border-bottom:0}
+  td::before{
+    content:'';color:var(--muted);font-size:11px;font-weight:700;
+    letter-spacing:.3px;text-align:left;flex:none;
+  }
+  #rankingBody td:nth-of-type(1)::before{content:'순위'}
+  #rankingBody td:nth-of-type(2)::before{content:'학번'}
+  #rankingBody td:nth-of-type(3)::before{content:'소환사'}
+  #rankingBody td:nth-of-type(4)::before{content:'자습'}
+  #rankingBody td:nth-of-type(5)::before{content:'벌점'}
+  #rankingBody td:nth-of-type(6)::before{content:'티어'}
+  #penaltyRankingBody td:nth-of-type(1)::before{content:'순위'}
+  #penaltyRankingBody td:nth-of-type(2)::before{content:'학번'}
+  #penaltyRankingBody td:nth-of-type(3)::before{content:'소환사'}
+  #penaltyRankingBody td:nth-of-type(4)::before{content:'반'}
+  #penaltyRankingBody td:nth-of-type(5)::before{content:'벌점'}
+  #penaltyRankingBody td:nth-of-type(6)::before{content:'상태'}
+  /* 티어 칸은 내용(뱃지+게이지)이 커서 라벨 아래로 통째로 쌓음 */
+  #rankingBody td:nth-of-type(6){display:block;text-align:left}
+  #rankingBody td:nth-of-type(6)::before{display:block;margin-bottom:8px}
+  #rankingBody .tier-cell{max-width:none}
+  #rankingBody .gauge.xs{max-width:none}
+  aside{width:calc(100vw - 40px);max-width:320px}
 }
