@@ -33,18 +33,23 @@ html{scroll-behavior:smooth}
 
 body{
   margin:0;color:var(--text);font-family:Pretendard,sans-serif;
+  background:var(--bg);
+  overflow-x:hidden;
+  position:relative;
+}
+/* 배경 이미지를 뷰포트 크기에 고정된 별도 레이어로 분리.
+   body에 직접 scroll로 깔면 cover 계산이 "페이지 전체 길이" 기준이 되어
+   작은 화면(특히 표가 많은 모바일)에서 이미지가 과하게 확대되어 흐려지는 문제가 있었음.
+   position:fixed 레이어는 항상 실제 화면 크기 기준으로만 계산되고,
+   iOS의 background-attachment:fixed 버그도 같이 피해감. */
+body::before{
+  content:'';position:fixed;inset:0;z-index:-1;
   background:
     radial-gradient(1200px 640px at 10% -10%, rgba(63,217,199,.14), transparent 58%),
     radial-gradient(900px 520px at 105% 4%, rgba(139,123,255,.15), transparent 55%),
     radial-gradient(760px 440px at 50% 118%, rgba(232,197,116,.09), transparent 60%),
     linear-gradient(180deg,rgba(2,4,9,.62),rgba(2,4,9,.58) 35%,rgba(2,4,9,.72) 75%,rgba(2,4,9,.9)),
-    url('leagueof.jpg') center top/cover scroll no-repeat var(--bg);
-  overflow-x:hidden;
-}
-/* background-attachment:fixed은 모바일 사파리에서 깨지거나 안 뜨는 경우가 많아서
-   데스크톱에서만 켜고, 모바일은 기본값(scroll)으로 둡니다. */
-@media(min-width:701px){
-  body{background-attachment:fixed}
+    url('leagueof.jpg') center top/cover no-repeat var(--bg);
 }
 ::selection{background:var(--gold);color:#0a0e18}
 
