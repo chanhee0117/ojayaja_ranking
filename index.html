@@ -1,10 +1,11 @@
-<!doctype html><html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>대진고 자습 반대항전</title><link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css"><link rel="preconnect" href="https://fonts.googleapis.com"><link rel="stylesheet" href="styles.css?v=22"></head><body>
+<!doctype html><html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>대진고 자습 반대항전</title><link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css"><link rel="preconnect" href="https://fonts.googleapis.com"><link rel="stylesheet" href="styles.css?v=24"></head><body>
 <header><div class="head">
   <a class="logo">DAEJIN <b>RIFT</b></a>
   <nav>
-    <a href="#ranking">개인 랭킹</a>
+    <a href="#ranking">자습왕</a>
     <a href="#promotions">최근 승급</a>
-    <a href="#penalty-ranking">벌점 랭킹</a>
+    <a href="#penalty-ranking">벌점왕</a>
+    <a href="#penalty-feed">최근 벌점</a>
     <a href="#classes">반 대항전</a>
     <a href="#search">소환사 검색</a>
   </nav>
@@ -24,15 +25,20 @@
 </section>
 
 <section id="ranking">
-  <div class="title"><h2>개인 랭킹</h2><button id="refresh">전적 갱신</button></div>
+  <div class="title"><h2>자습왕</h2><button id="refresh">전적 갱신</button></div>
   <div class="panel scroll"><table>
     <thead><tr><th></th><th>순위</th><th>학번</th><th>소환사</th><th>자습</th><th>벌점</th><th>티어</th></tr></thead>
     <tbody id="rankingBody"></tbody>
   </table></div>
 </section>
 
+<section id="penalty-feed">
+  <h2>최근 벌점</h2>
+  <div id="penaltyFeed" class="panel promo-feed scroll"></div>
+</section>
+
 <section id="penalty-ranking">
-  <h2>벌점 랭킹</h2>
+  <h2>벌점왕</h2>
   <p class="hint">벌점이 높은 순서입니다. 11점 이상 자습 퇴출</p>
   <div class="panel scroll"><table>
     <thead><tr><th></th><th>순위</th><th>학번</th><th>소환사</th><th>반</th><th>벌점</th><th>상태</th></tr></thead>
@@ -74,6 +80,5 @@
 </aside>
 
 <script src="config.js"></script>
-<script src="script.js?v=22"></script>
+<script src="script.js?v=23"></script>
 </body></html>
-
