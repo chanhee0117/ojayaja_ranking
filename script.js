@@ -24,7 +24,7 @@ const PENALTY_RULES = [
 
 const ADMIN_PASSWORD = 'daejin1234';
 const PENALTY_HOURS_WEIGHT = 2;
-const REQUIRED_API_VERSION = 'v38-e-column';
+const REQUIRED_API_VERSION = 'v41-clear-recent';
 const $ = selector => document.querySelector(selector);
 
 let students = [];
@@ -62,6 +62,7 @@ function normalizedStudentId(value) {
 }
 
 function penaltyStatus(penalty) {
+  if (penalty >= 10) return { label: '진경주체불가', tone: 'critical' };
   if (penalty >= 4) return { label: '진경호출', tone: 'critical' };
   if (penalty >= 2) return { label: '위험', tone: 'warning' };
   if (penalty > 0) return { label: '주의', tone: 'caution' };
@@ -437,7 +438,7 @@ function selectedPenaltyReason() {
 
 async function persistPenalty(student, value, metadata = {}) {
   if (!CONFIG.APPS_SCRIPT_URL) throw new Error('먼저 config.js에 새 Apps Script /exec 주소를 입력해 주세요.');
-  if (activeApiVersion !== REQUIRED_API_VERSION) throw new Error('안전을 위해 저장을 차단했습니다. Apps Script v38을 먼저 배포해 주세요.');
+  if (activeApiVersion !== REQUIRED_API_VERSION) throw new Error('안전을 위해 저장을 차단했습니다. Apps Script v41을 먼저 배포해 주세요.');
   const safeValue = roundPenalty(Math.max(0, Number(value) || 0));
   const form = new URLSearchParams({
     action: 'setPenalty',
@@ -492,6 +493,33 @@ async function overwritePenalty() {
   render();
   updatePenaltyTool({ syncManual: true });
   showSaveMessage(`${student.studentId} ${student.name}: 누적 벌점을 ${formatPenalty(previous)}점에서 ${formatPenalty(result.penalty)}점으로 정정했습니다.`);
+}
+
+async function clearRecentPenaltyHistory() {
+  if (!admin) return;
+  if (activeApiVersion !== REQUIRED_API_VERSION) throw new Error('Apps Script v41을 먼저 배포해 주세요.');
+  if (!window.confirm('최근 벌점 기록을 모두 초기화할까요? 학생들의 누적 벌점은 변경되지 않습니다.')) return;
+
+  const button = $('#clearRecentPenalties');
+  button.disabled = true;
+  showSaveMessage('최근 벌점 기록을 초기화하는 중입니다…', 'pending');
+  try {
+    const form = new URLSearchParams({
+      action: 'clearRecentPenalties',
+      apiVersion: REQUIRED_API_VERSION,
+      adminPassword: ADMIN_PASSWORD
+    });
+    const response = await fetch(CONFIG.APPS_SCRIPT_URL, { method: 'POST', body: form });
+    if (!response.ok) throw new Error('최근 벌점 기록 초기화에 실패했습니다.');
+    const result = await response.json();
+    if (result.apiVersion !== REQUIRED_API_VERSION) throw new Error('Apps Script 응답 버전이 일치하지 않습니다.');
+    if (result.ok === false) throw new Error(result.message || '최근 벌점 기록 초기화에 실패했습니다.');
+    recentPenalties = [];
+    renderPenaltyFeed();
+    showSaveMessage('최근 벌점 기록을 모두 초기화했습니다. 누적 벌점은 그대로 유지됩니다.');
+  } finally {
+    button.disabled = false;
+  }
 }
 
 async function runSave(action) {
@@ -561,6 +589,7 @@ function setup() {
 
   $('#savePenalty').onclick = () => runSave(addSelectedPenalty);
   $('#overwritePenalty').onclick = () => runSave(overwritePenalty);
+  $('#clearRecentPenalties').onclick = () => clearRecentPenaltyHistory().catch(error => showSaveMessage(error.message, 'error'));
   $('#resetPenaltySelection').onclick = () => {
     resetSelections();
     showSaveMessage('선택한 항목을 초기화했습니다.', 'pending');
