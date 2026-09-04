@@ -59,9 +59,9 @@ h2::before{content:'';width:4px;height:20px;background:linear-gradient(var(--tea
 
 .panel{position:relative;border:1px solid var(--line);background:linear-gradient(135deg,rgba(20,30,52,.86),rgba(7,11,21,.92));box-shadow:0 18px 38px rgba(0,0,0,.36)}
 .scroll{max-height:560px;overflow:auto;border-radius:12px}
-.scroll::-webkit-scrollbar,aside::-webkit-scrollbar{width:9px;height:9px}
-.scroll::-webkit-scrollbar-track,aside::-webkit-scrollbar-track{background:rgba(255,255,255,.03)}
-.scroll::-webkit-scrollbar-thumb,aside::-webkit-scrollbar-thumb{background:linear-gradient(#8a6a28,var(--gold));border-radius:8px}
+.scroll::-webkit-scrollbar,.clean-list::-webkit-scrollbar,aside::-webkit-scrollbar{width:9px;height:9px}
+.scroll::-webkit-scrollbar-track,.clean-list::-webkit-scrollbar-track,aside::-webkit-scrollbar-track{background:rgba(255,255,255,.03)}
+.scroll::-webkit-scrollbar-thumb,.clean-list::-webkit-scrollbar-thumb,aside::-webkit-scrollbar-thumb{background:linear-gradient(#8a6a28,var(--gold));border-radius:8px}
 
 button{border:0;padding:11px 17px;background:linear-gradient(135deg,#1c6f6b,var(--teal));color:#04140f;font:800 13px Pretendard,sans-serif;cursor:pointer;clip-path:polygon(6px 0,100% 0,100% calc(100% - 6px),calc(100% - 6px) 100%,0 100%,0 6px);transition:transform .2s,filter .2s}
 button:hover{transform:translateY(-2px);filter:drop-shadow(0 9px 16px rgba(63,217,199,.26))}
@@ -146,7 +146,7 @@ tbody tr:hover{background:rgba(63,217,199,.045)}
 .clean-stats div{min-height:75px;padding:14px;border:1px solid rgba(63,217,199,.2);background:rgba(63,217,199,.055)}
 .clean-stats span{display:block;color:var(--muted);font-size:10.5px}
 .clean-stats b{display:block;margin-top:6px;color:var(--gold-soft);font:700 18px 'Rajdhani',Pretendard,sans-serif}
-.clean-list{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:11px}
+.clean-list{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));align-items:start;gap:11px;max-height:560px;overflow:auto;padding-right:8px;overscroll-behavior:contain}
 .clean-class{margin:0;border:1px solid var(--line);background:rgba(5,10,19,.5)}
 .clean-class-title{display:flex;align-items:center;justify-content:space-between;padding:12px 13px;border-bottom:1px solid var(--line);background:rgba(95,157,255,.07)}
 .clean-class-title h3{margin:0;font-size:13px}
