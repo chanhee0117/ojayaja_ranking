@@ -1,9 +1,11 @@
-<!doctype html><html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>대진고 자습 반대항전</title><link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css"><link rel="preconnect" href="https://fonts.googleapis.com"><link rel="stylesheet" href="styles.css?v=24"></head><body>
+<!doctype html><html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="description" content="대진고 자습 현황, 벌점 기록, 청정구역 학생을 한눈에 확인하는 대시보드"><title>대진고 자습 반대항전</title><link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css"><link rel="preconnect" href="https://fonts.googleapis.com"><link rel="stylesheet" href="styles.css?v=25"></head><body>
 <header><div class="head">
   <a class="logo">DAEJIN <b>RIFT</b></a>
   <nav>
     <a href="#ranking">자습왕</a>
     <a href="#promotions">최근 승급</a>
+    <a href="#clean-zone">청정구역</a>
+    <a href="#penalty-guide">벌점 기준</a>
     <a href="#penalty-ranking">벌점왕</a>
     <a href="#penalty-feed">최근 벌점</a>
     <a href="#classes">반 대항전</a>
@@ -24,12 +26,34 @@
   <div id="promotionFeed" class="panel promo-feed scroll"></div>
 </section>
 
+<section id="clean-zone" class="clean-zone-section">
+  <div class="title">
+    <h2>청정구역</h2>
+    <span id="cleanCount" class="clean-count">0명</span>
+  </div>
+  <p class="hint">누적 벌점이 0점인 학생들입니다. 벌점 데이터가 갱신되면 자동으로 반영됩니다.</p>
+  <div class="panel clean-panel">
+    <div id="cleanStats" class="clean-stats"></div>
+    <div id="cleanZoneList" class="clean-list"></div>
+    <div class="clean-benefits"><b>청정구역 혜택</b><span>상금 혜택</span><span>학생부 컨설팅 기회 우선 부여</span><span>수시상담 기회 우선 부여</span></div>
+  </div>
+</section>
+
 <section id="ranking">
   <div class="title"><h2>자습왕</h2><button id="refresh">전적 갱신</button></div>
   <div class="panel scroll"><table>
-    <thead><tr><th></th><th>순위</th><th>학번</th><th>소환사</th><th>자습</th><th>벌점</th><th>티어</th></tr></thead>
+    <thead><tr><th>순위</th><th>학번</th><th>소환사</th><th>자습</th><th>벌점</th><th>티어</th></tr></thead>
     <tbody id="rankingBody"></tbody>
   </table></div>
+</section>
+
+<section id="penalty-guide">
+  <div class="title">
+    <h2>벌점 기준표</h2>
+    <span class="guide-badge">발생 횟수 × 기준 점수</span>
+  </div>
+  <p class="hint">감독학생은 아래 기준을 확인한 뒤 관리자 패널에서 해당 항목과 횟수를 선택해 주세요.</p>
+  <div id="penaltyGuide" class="penalty-guide"></div>
 </section>
 
 <section id="penalty-feed">
@@ -41,7 +65,7 @@
   <h2>벌점왕</h2>
   <p class="hint">벌점이 높은 순서입니다. 11점 이상 자습 퇴출</p>
   <div class="panel scroll"><table>
-    <thead><tr><th></th><th>순위</th><th>학번</th><th>소환사</th><th>반</th><th>벌점</th><th>상태</th></tr></thead>
+    <thead><tr><th>순위</th><th>학번</th><th>소환사</th><th>반</th><th>벌점</th><th>상태</th></tr></thead>
     <tbody id="penaltyRankingBody"></tbody>
   </table></div>
 </section>
@@ -64,21 +88,39 @@
 </main>
 <footer>DAEJIN RIFT RANKING · © 2026</footer>
 
-<button id="adminToggle" class="admin">관리자</button>
-<aside id="admin" hidden>
-  <button id="closeAdmin">×</button>
-  <h2>관리자 패널</h2>
-  <form id="loginForm"><input id="password" type="password" placeholder="관리자 비밀번호"><button>로그인</button></form>
+<button id="adminToggle" class="admin">감독학생 벌점 기록</button>
+<aside id="admin" aria-labelledby="adminTitle" hidden>
+  <button id="closeAdmin" aria-label="벌점 기록 패널 닫기">×</button>
+  <h2 id="adminTitle">감독학생 벌점 기록</h2>
+  <form id="loginForm"><label for="password">관리자 비밀번호</label><div class="login-row"><input id="password" type="password" placeholder="비밀번호 입력" autocomplete="current-password"><button>로그인</button></div></form>
   <div id="adminTools" hidden>
-    <p>학번을 입력해 벌점을 부여하면 원본 시트 E열에 즉시 저장됩니다.</p>
-    <input id="penaltyStudent" inputmode="numeric" maxlength="5" placeholder="학번 입력 (예: 20626)">
-    <input id="penaltyValue" type="number" value="0" min="0" placeholder="벌점">
-    <button id="savePenalty">벌점 저장</button>
-    <button id="adminRefresh">데이터 새로고침</button>
-    <a id="sheetLink" target="_blank">Google Spreadsheet 열기</a>
+    <p class="admin-instruction">학생을 선택하고 발생 항목의 체크 또는 + 버튼을 누르면 추가 벌점이 자동 계산됩니다.</p>
+    <label for="penaltyStudent">벌점 대상 학생</label>
+    <input id="penaltyStudent" inputmode="numeric" list="studentOptions" placeholder="학번 입력 (예: 20626)" autocomplete="off">
+    <datalist id="studentOptions"></datalist>
+    <div id="selectedStudent" class="selected-student" aria-live="polite">학번을 입력해 주세요.</div>
+
+    <div class="criterion-heading"><b>발생 항목</b><span>체크 시 1회 선택</span></div>
+    <div id="penaltyChecklist" class="penalty-checklist"></div>
+
+    <div class="penalty-summary" aria-live="polite">
+      <div><span>현재 누적</span><b id="currentPenalty">-</b></div>
+      <div><span>이번 추가</span><b id="addedPenalty">+0점</b></div>
+      <div class="summary-total"><span>저장 후 누적</span><b id="nextPenalty">-</b></div>
+    </div>
+    <button id="savePenalty" class="save-penalty" type="button">선택한 벌점 추가 저장</button>
+    <button id="resetPenaltySelection" class="secondary" type="button">선택 초기화</button>
+    <p id="penaltySaveMessage" class="save-message" aria-live="polite"></p>
+
+    <details class="manual-penalty">
+      <summary>누적 벌점 직접 수정</summary>
+      <p>오입력 정정이 필요할 때만 사용하세요.</p>
+      <div class="manual-row"><input id="penaltyValue" type="number" value="0" min="0" step="0.1" inputmode="decimal" aria-label="수정할 누적 벌점"><button id="overwritePenalty" class="secondary" type="button">수정 저장</button></div>
+    </details>
+    <div class="admin-links"><button id="adminRefresh" class="secondary" type="button">데이터 새로고침</button><a id="sheetLink" target="_blank" rel="noopener">Google Spreadsheet 열기</a></div>
   </div>
 </aside>
 
 <script src="config.js"></script>
-<script src="script.js?v=23"></script>
+<script src="script.js?v=25"></script>
 </body></html>
