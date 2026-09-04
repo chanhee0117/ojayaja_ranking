@@ -172,7 +172,7 @@ function reflectedHours(student) {
 }
 
 function rankedStudents() {
-  return [...students].sort((a, b) => reflectedHours(b) - reflectedHours(a) || b.hours - a.hours || a.penalty - b.penalty || a.studentId.localeCompare(b.studentId));
+  return [...students].sort((a, b) => b.hours - a.hours || a.studentId.localeCompare(b.studentId));
 }
 
 function penaltyRankedStudents() {
@@ -205,7 +205,7 @@ function renderTop3() {
       <h3>${escapeHtml(student.name)}</h3>
       <p>${student.studentId} · 2학년 ${student.class}반</p>
       <strong>${student.hours.toFixed(1)}h</strong>
-      <small>벌점 ${formatPenalty(student.penalty)}점 · 반영 ${reflectedHours(student).toFixed(1)}h</small>
+      <small>벌점 ${formatPenalty(student.penalty)}점</small>
     </article>`).join('');
 }
 
