@@ -38,8 +38,10 @@ header{position:sticky;top:0;z-index:50;background:rgba(4,7,14,.62);border-botto
 header::after{content:'';position:absolute;left:0;right:0;bottom:-1px;height:1px;background:linear-gradient(90deg,transparent,var(--teal),var(--gold),transparent);opacity:.7}
 .head,main,footer{max-width:1180px;margin:auto}
 .head{height:70px;padding:0 20px;display:flex;align-items:center;gap:34px}
-.logo{color:var(--text);text-decoration:none;font:800 14px var(--display);letter-spacing:1.5px;white-space:nowrap}
-.logo b{color:var(--gold);font-weight:800}
+.logo{position:relative;display:inline-flex;align-items:center;gap:9px;padding:4px 1px 5px 13px;text-decoration:none;font-family:'Gugi',Pretendard,sans-serif;white-space:nowrap;letter-spacing:-.3px;filter:drop-shadow(0 3px 8px rgba(0,0,0,.62))}
+.logo::before{content:'';position:absolute;left:0;width:4px;height:28px;background:linear-gradient(180deg,#73fff0 0%,#e8c574 55%,#a87524 100%);transform:skewX(-13deg);box-shadow:0 0 11px rgba(63,217,199,.58)}
+.logo span{color:var(--gold-soft);font-size:18px;text-shadow:0 1px 0 #4e3510,0 0 12px rgba(232,197,116,.3)}
+.logo b{padding-left:9px;border-left:1px solid rgba(232,197,116,.32);background:linear-gradient(90deg,#f8fbff 0%,#b8fff4 48%,#e8c574 100%);background-clip:text;-webkit-background-clip:text;color:transparent;font-size:14px;font-weight:400;text-shadow:0 0 18px rgba(63,217,199,.12)}
 nav{display:flex;align-items:center;gap:24px;flex:1}
 nav a{color:var(--muted);font-size:12.5px;font-weight:700;text-decoration:none;transition:color .2s}
 nav a:hover{color:var(--text)}
@@ -261,7 +263,10 @@ aside label{display:block;margin:8px 0 6px;color:var(--muted);font-size:11px;fon
   main{padding-left:14px;padding-right:14px}
   .head{padding:0 14px}
   #updated{font-size:9px}
-  .logo{font-size:12px}
+  .logo{gap:6px;padding-left:10px;letter-spacing:-.5px}
+  .logo::before{height:24px;width:3px}
+  .logo span{font-size:14px}
+  .logo b{padding-left:6px;font-size:10.5px}
   .title{align-items:flex-start}
   .title #refresh{flex:none;padding:9px 10px}
   .status-filters,.clean-stats,.clean-list,.student-result{grid-template-columns:1fr}
