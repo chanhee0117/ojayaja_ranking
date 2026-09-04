@@ -24,12 +24,14 @@ const PENALTY_RULES = [
 
 const ADMIN_PASSWORD = 'daejin1234';
 const PENALTY_HOURS_WEIGHT = 2;
+const REQUIRED_API_VERSION = 'v38-e-column';
 const $ = selector => document.querySelector(selector);
 
 let students = [];
 let recentPenalties = [];
 let admin = false;
 let saving = false;
+let activeApiVersion = '';
 let selections = emptySelections();
 
 function emptySelections() {
@@ -88,9 +90,16 @@ function sortStudents(list) {
 
 /* ---------------- 스프레드시트 연결 ---------------- */
 async function loadFromAppsScript() {
-  const response = await fetch(CONFIG.APPS_SCRIPT_URL, { cache: 'no-store' });
+  const separator = CONFIG.APPS_SCRIPT_URL.includes('?') ? '&' : '?';
+  const freshUrl = `${CONFIG.APPS_SCRIPT_URL}${separator}_=${Date.now()}`;
+  const response = await fetch(freshUrl, { cache: 'no-store' });
   if (!response.ok) throw new Error('Apps Script에서 학생 정보를 불러오지 못했습니다.');
   const data = await response.json();
+  if (data.apiVersion !== REQUIRED_API_VERSION) {
+    activeApiVersion = '';
+    throw new Error('Apps Script가 이전 버전입니다. 새 Code.gs를 새 버전으로 배포해 주세요.');
+  }
+  activeApiVersion = data.apiVersion;
   if (data.ok === false) throw new Error(data.message || '스프레드시트 연결에 실패했습니다.');
   if (!Array.isArray(data.students)) throw new Error('Apps Script 응답에 학생 목록이 없습니다.');
   return { students: data.students, recentPenalties: Array.isArray(data.recentPenalties) ? data.recentPenalties : [] };
@@ -428,9 +437,11 @@ function selectedPenaltyReason() {
 
 async function persistPenalty(student, value, metadata = {}) {
   if (!CONFIG.APPS_SCRIPT_URL) throw new Error('먼저 config.js에 새 Apps Script /exec 주소를 입력해 주세요.');
+  if (activeApiVersion !== REQUIRED_API_VERSION) throw new Error('안전을 위해 저장을 차단했습니다. Apps Script v38을 먼저 배포해 주세요.');
   const safeValue = roundPenalty(Math.max(0, Number(value) || 0));
   const form = new URLSearchParams({
     action: 'setPenalty',
+    apiVersion: REQUIRED_API_VERSION,
     studentId: student.studentId,
     penalty: String(safeValue)
   });
@@ -438,7 +449,8 @@ async function persistPenalty(student, value, metadata = {}) {
   if (metadata.points > 0) form.append('addedPenalty', String(roundPenalty(metadata.points)));
   const response = await fetch(CONFIG.APPS_SCRIPT_URL, { method: 'POST', body: form });
   if (!response.ok) throw new Error('누적 벌점 저장에 실패했습니다.');
-  const result = await response.json().catch(() => ({ ok: true }));
+  const result = await response.json();
+  if (result.apiVersion !== REQUIRED_API_VERSION) throw new Error('Apps Script 응답 버전이 일치하지 않습니다.');
   if (result.ok === false) throw new Error(result.message || '누적 벌점 저장에 실패했습니다.');
   student.penalty = safeValue;
   return {
