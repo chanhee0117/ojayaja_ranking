@@ -1,6 +1,16 @@
-const CONFIG={
-  SHEET_ID:'11PnmT_BqMUp_l-oCgnbKR19bDUKgtiTznXNhuCG9hXg',
-  SHEET_NAME:'1학기 자습 총시수',
-  // Apps Script 웹 앱 배포 URL을 붙여넣으세요. 비워두면 이 브라우저에만 저장됩니다.
-  APPS_SCRIPT_URL:'https://script.google.com/macros/s/AKfycbxLQbEXR6rSETQ6gT2T-aSaJpeuStAvOE2osQ9EZ3n9OidIkmInhz396JMZC9FiWhDP/exec'
+const CONFIG = {
+  // 실제 벌점 스프레드시트
+  SHEET_ID: '1tG8sd7XMOgkechtCgQOz9ROHF3jCcIe1tQcLOgWFbyg',
+  SHEET_GID: 1239065071,
+
+  // 기존 구조 유지: A열=반, B열=번호, C열=이름, D열=자습시간, E열=누적 벌점
+  HOURS_COLUMN: 4,
+  PENALTY_COLUMN: 5,
+
+  // 이 계정이 시트 편집자로 추가된 뒤 Apps Script를 배포합니다.
+  EDITOR_ACCOUNT: '202620626@dj.hs.kr',
+
+  // Code.gs를 웹 앱으로 배포한 뒤 생성된 /exec 주소를 붙여 넣으세요.
+  // 비어 있으면 공개/로그인 가능한 시트에서 읽기만 시도하며 벌점 저장은 차단됩니다.
+  APPS_SCRIPT_URL: ''
 };
