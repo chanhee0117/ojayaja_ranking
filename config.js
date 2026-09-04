@@ -12,5 +12,5 @@ const CONFIG = {
 
   // Code.gs를 웹 앱으로 배포한 뒤 생성된 /exec 주소를 붙여 넣으세요.
   // 비어 있으면 공개/로그인 가능한 시트에서 읽기만 시도하며 벌점 저장은 차단됩니다.
-  APPS_SCRIPT_URL: 'https://script.google.com/macros/s/AKfycbyxamBb0wzh1w8tupVktjSW7LEUQNhf4k60K_ejS4xKOpEPVWgrSMDwRLWC_w1CJma0fQ/exec'
+  APPS_SCRIPT_URL: 'https://script.google.com/macros/s/AKfycbxayhoE2sLRP7UExlyPqKYkM28eCi-H0fYir5LJoA_36NGlSBZX2B7MY9SsDWkp_FpmMA/exec'
 };
