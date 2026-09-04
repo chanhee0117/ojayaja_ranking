@@ -20,6 +20,49 @@ const TIER_BAND = 40;          // 티어 1단계당 필요한 자습시간 (시�
 const HOURS_PER_PENALTY = 20;  // 벌점 1점당 차감되는 자습시간 환산치 (시간)
 // 200시간이면 Gold(idx3)에서 5단계 위인 Challenger(idx8)에 정확히 도달합니다.
 
+/* ---------------- 공식 벌점 기준 ----------------
+ * 사진 속 기준표와 동일한 점수입니다. 관리자 패널과 공개 기준표가
+ * 같은 데이터를 사용하므로 한 곳만 수정해도 두 화면에 함께 반영됩니다.
+ */
+const PENALTY_RULES = [
+  {
+    key: 'restroom',
+    title: '화장실 및 준비물',
+    description: '화장실은 자습 시간에 하루 3회 초과부터 감점',
+    points: 0.2
+  },
+  { key: 'sleep', title: '자습 중 수면', description: '발생 횟수만큼 입력', points: 0.5 },
+  { key: 'late', title: '지각', description: '발생 횟수만큼 입력', points: 0.3 },
+  {
+    key: 'noise',
+    title: '자습실 내 소란 및 친목 행위',
+    description: '눈 맞춤·제스처·톡 치고 지나가기 등',
+    points: 0.5
+  },
+  {
+    key: 'device',
+    title: '학습 용도 외 전자기기 사용 / 종 치기 전 책 덮기',
+    description: '발생 횟수만큼 입력',
+    points: 1.0
+  }
+];
+
+const CLASS_PENALTY_WEIGHT = 2; // 개인 벌점 1점당 반 총시수 2시간 차감
+
+function roundPenalty(value) {
+  return Math.round((Number(value) + Number.EPSILON) * 10) / 10;
+}
+
+function formatPenalty(value) {
+  return roundPenalty(value).toFixed(1);
+}
+
+function escapeHtml(value) {
+  return String(value).replace(/[&<>'"]/g, character => ({
+    '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;'
+  })[character]);
+}
+
 // 벌점 자체에 대한 경고 문구 (승급전 티어와 별개로, 실제 징계 상태를 나타냄)
 function penaltyStatus(penalty) {
   if (penalty >= 11) return '퇴출';
@@ -35,6 +78,9 @@ let students = [];
 let admin = false;
 let penalties = {};
 let recentPromotions = [];
+let recentPenalties = [];
+let penaltySelections = Object.fromEntries(PENALTY_RULES.map(rule => [rule.key, 0]));
+let penaltySaving = false;
 
 const $ = selector => document.querySelector(selector);
 
@@ -107,9 +153,9 @@ function renderPromotions() {
 
   el.innerHTML = recentPromotions.map(item => `
     <div class="promo-item">
-      <span class="promo-name"><b>${item.name}</b>님</span>
-      <span class="promo-tier">${item.from} → ${item.to}</span>
-      <span class="promo-time">${item.date}</span>
+      <span class="promo-name"><b>${escapeHtml(item.name)}</b>님</span>
+      <span class="promo-tier">${escapeHtml(item.from)} → ${escapeHtml(item.to)}</span>
+      <span class="promo-time">${escapeHtml(item.date)}</span>
     </div>
   `).join('');
 }
@@ -143,18 +189,27 @@ function checkPersonalLevelUp(student, t) {
 
 /* ---------------- 데이터 로드 ---------------- */
 async function getServerData() {
+  const localPenaltyValues = JSON.parse(localStorage.getItem('daejin-rift-penalties') || '{}');
+  const localPenaltyFeed = JSON.parse(localStorage.getItem('daejin-rift-recent-penalties') || '[]');
+
   if (!CONFIG.APPS_SCRIPT_URL) {
-    return { penalties: JSON.parse(localStorage.getItem('daejin-rift-penalties') || '{}'), recentPromotions: [] };
+    return { penalties: localPenaltyValues, recentPromotions: [], recentPenalties: localPenaltyFeed };
   }
 
   try {
     const response = await fetch(CONFIG.APPS_SCRIPT_URL);
     if (!response.ok) throw new Error('데이터를 불러오지 못했습니다.');
     const data = await response.json();
-    return { penalties: data.penalties || {}, recentPromotions: data.recentPromotions || [] };
+    return {
+      penalties: data.penalties || {},
+      recentPromotions: data.recentPromotions || [],
+      recentPenalties: Array.isArray(data.recentPenalties) && data.recentPenalties.length
+        ? data.recentPenalties
+        : localPenaltyFeed
+    };
   } catch (error) {
     console.warn('공용 저장소 연결 실패: 브라우저 저장값을 사용합니다.', error);
-    return { penalties: JSON.parse(localStorage.getItem('daejin-rift-penalties') || '{}'), recentPromotions: [] };
+    return { penalties: localPenaltyValues, recentPromotions: [], recentPenalties: localPenaltyFeed };
   }
 }
 
@@ -186,6 +241,7 @@ async function load() {
   const server = await getServerData();
   penalties = server.penalties;
   recentPromotions = server.recentPromotions;
+  recentPenalties = server.recentPenalties;
 
   students = data.table.rows
     .filter(row =>
@@ -207,9 +263,12 @@ async function load() {
         number,
         name: String(values[2]).trim(),
         hours: Number(values[3]) || 0,
-        penalty: Number(penalties[studentId]) || 0
+        penalty: roundPenalty(Number(penalties[studentId]) || 0)
       };
     });
+
+  populateStudentOptions();
+  updateSelectedStudent();
 
   $('#updated').textContent = ' 마지막 업데이트 : ' + new Intl.DateTimeFormat('ko-KR', {
     dateStyle: 'short',
@@ -232,26 +291,100 @@ function groups() {
       students: group,
       hours,
       penalty,
-      final: hours - penalty,
+      final: hours - penalty * CLASS_PENALTY_WEIGHT,
       avg: hours / group.length
     };
   }).sort((a, b) => b.final - a.final);
 }
 
+function renderPenaltyGuide() {
+  const guide = $('#penaltyGuide');
+  if (!guide) return;
+
+  guide.innerHTML = PENALTY_RULES.map((rule, index) => `
+    <article class="guide-card">
+      <span class="guide-number">0${index + 1}</span>
+      <div><h3>${escapeHtml(rule.title)}</h3><p>${escapeHtml(rule.description)}</p></div>
+      <strong>${formatPenalty(rule.points)}점</strong>
+    </article>
+  `).join('');
+}
+
+function renderPenaltyFeed() {
+  const feed = $('#penaltyFeed');
+  if (!feed) return;
+
+  if (!recentPenalties.length) {
+    feed.innerHTML = '<p class="hint">저장된 최근 벌점 기록이 없습니다.</p>';
+    return;
+  }
+
+  feed.innerHTML = recentPenalties.slice(0, 30).map(item => `
+    <div class="penalty-feed-item">
+      <span class="penalty-feed-student"><b>${escapeHtml(item.name || '학생')}</b><small>${escapeHtml(item.studentId || '')}</small></span>
+      <span class="penalty-feed-reason">${escapeHtml(item.reason || '벌점 부여')}</span>
+      <strong>+${formatPenalty(item.points || 0)}점</strong>
+      <time>${escapeHtml(item.date || '')}</time>
+    </div>
+  `).join('');
+}
+
+function renderCleanZone() {
+  const cleanStudents = students
+    .filter(student => roundPenalty(student.penalty) === 0)
+    .sort((a, b) => a.class - b.class || a.number - b.number);
+  const cleanCount = $('#cleanCount');
+  const stats = $('#cleanStats');
+  const list = $('#cleanZoneList');
+
+  cleanCount.textContent = `${cleanStudents.length}명`;
+
+  if (!cleanStudents.length) {
+    stats.innerHTML = '';
+    list.innerHTML = '<p class="clean-empty">현재 청정구역에 등록된 학생이 없습니다.</p>';
+    return;
+  }
+
+  const grouped = cleanStudents.reduce((map, student) => {
+    (map[student.class] ??= []).push(student);
+    return map;
+  }, {});
+  const classEntries = Object.entries(grouped).sort(([a], [b]) => Number(a) - Number(b));
+  const topClass = [...classEntries].sort((a, b) => b[1].length - a[1].length || Number(a[0]) - Number(b[0]))[0];
+  const cleanRatio = students.length ? Math.round((cleanStudents.length / students.length) * 100) : 0;
+
+  stats.innerHTML = `
+    <div><span>청정 학생</span><b>${cleanStudents.length}명</b></div>
+    <div><span>전체 비율</span><b>${cleanRatio}%</b></div>
+    <div><span>최다 청정 반</span><b>2학년 ${topClass[0]}반 · ${topClass[1].length}명</b></div>
+  `;
+
+  list.innerHTML = classEntries.map(([classNumber, classStudents]) => `
+    <article class="clean-class">
+      <div class="clean-class-title"><h3>2학년 ${classNumber}반</h3><span>${classStudents.length}명</span></div>
+      <ul>${classStudents.map(student => `
+        <li><span>${student.studentId}</span><b>${escapeHtml(student.name)}</b><em>0.0점</em></li>
+      `).join('')}</ul>
+    </article>
+  `).join('');
+}
+
 /* ---------------- 렌더링 ---------------- */
 function render() {
   const ranked = rankStudents();
-  const penaltyRanked = penaltyStudents();
+  const penaltyRanked = penaltyStudents().filter(student => student.penalty > 0);
   const classGroups = groups();
 
   renderPromotions();
+  renderPenaltyFeed();
+  renderCleanZone();
 
   $('#top3').innerHTML = ranked.slice(0, 3).map((student, index) => {
     const t = computeTier(student);
     return `
     <article class="top">
       <i>${['♛', '♜', '♞'][index]}</i>
-      <h3>${student.name}</h3>
+      <h3>${escapeHtml(student.name)}</h3>
       <span>${student.studentId} · 2학년 ${student.class}반</span>
       ${badgeHtml(t, 'sm')}
       <strong>${student.hours}h</strong>
@@ -263,20 +396,20 @@ function render() {
     const t = computeTier(student);
     return `
     <tr class="${student.penalty >= 11 ? 'expelled' : ''}">
-      <td>#${index + 1}</td><td>${student.studentId}</td><td><b>${student.name}</b></td>
+      <td>#${index + 1}</td><td>${student.studentId}</td><td><b>${escapeHtml(student.name)}</b></td>
       <td>${student.hours}h</td>
-      <td class="danger">${student.penalty}점</td>
+      <td class="danger">${formatPenalty(student.penalty)}점</td>
       <td>${tierCellHtml(student)}</td>
     </tr>`;
   }).join('');
 
-  $('#penaltyRankingBody').innerHTML = penaltyRanked.map((student, index) => `
+  $('#penaltyRankingBody').innerHTML = penaltyRanked.length ? penaltyRanked.map((student, index) => `
     <tr class="${student.penalty >= 11 ? 'expelled' : ''}">
-      <td>#${index + 1}</td><td>${student.studentId}</td><td><b>${student.name}</b></td>
-      <td>2학년 ${student.class}반</td><td class="danger">${student.penalty}점</td>
+      <td>#${index + 1}</td><td>${student.studentId}</td><td><b>${escapeHtml(student.name)}</b></td>
+      <td>2학년 ${student.class}반</td><td class="danger">${formatPenalty(student.penalty)}점</td>
       <td>${penaltyStatus(student.penalty)}</td>
     </tr>
-  `).join('');
+  `).join('') : '<tr><td colspan="6" class="empty-table">현재 벌점이 있는 학생이 없습니다.</td></tr>';
 
   const finals = classGroups.map(group => group.final);
   const maxFinal = Math.max(...finals);
@@ -289,7 +422,7 @@ function render() {
     return `
     <button class="race-row ${index === 0 ? 'lead' : ''}" data-class="${group.class}" style="--i:${index}">
       <span class="race-rank">${index + 1}</span>
-      <span class="race-label">2학년 ${group.class}반<small>총 ${group.hours}h · 평균 ${group.avg.toFixed(1)}h · 반 벌점 ${group.penalty}점</small></span>
+      <span class="race-label">2학년 ${group.class}반<small>총 ${group.hours}h · 평균 ${group.avg.toFixed(1)}h · 반 벌점 ${formatPenalty(group.penalty)}점</small></span>
       <span class="race-track"><span class="race-bar" data-pct="${pct}"></span></span>
       <span class="race-score">${group.final.toFixed(1)}h</span>
       <span class="race-gap">${index === 0 ? '👑 선두' : `−${gap.toFixed(1)}h`}</span>
@@ -314,7 +447,7 @@ function showClass(classNumber) {
   $('#classDetail').hidden = false;
   $('#classDetail').innerHTML = `<h3>🏰 2학년 ${classNumber}반 · ${classRank}위</h3><ol>${classStudents.map((student, index) => {
     const t = computeTier(student);
-    return `<li>#${index + 1} <b>${student.studentId} ${student.name}</b><span>${t.ko} · ${student.hours}h · 벌점 ${student.penalty}</span></li>`;
+    return `<li>#${index + 1} <b>${student.studentId} ${escapeHtml(student.name)}</b><span>${t.ko} · ${student.hours}h · 벌점 ${formatPenalty(student.penalty)}</span></li>`;
   }).join('')}</ol>`;
 }
 
@@ -348,59 +481,251 @@ $('#searchForm').onsubmit = event => {
       ['학번', student.studentId],
       ['소속', `2학년 ${student.class}반`],
       ['자습시간', `${student.hours}h`],
-      ['벌점', `${student.penalty}점`],
+      ['벌점', `${formatPenalty(student.penalty)}점`],
       ['학교 순위', `${rankPos}위`],
       ['반 순위', `${classRank}위`],
       ['징계 상태', penaltyStatus(student.penalty)]
-    ].map(([label, value]) => `<div><span>${label}</span><b>${value}</b></div>`).join('')}</div>
+    ].map(([label, value]) => `<div><span>${escapeHtml(label)}</span><b>${escapeHtml(value)}</b></div>`).join('')}</div>
   `;
 };
 
 /* ---------------- 관리자 ---------------- */
 const ADMIN_PASSWORD = 'daejin1234';
 
-async function setPenalty() {
-  const studentId = $('#penaltyStudent').value.replace(/\D/g, '').padStart(5, '0');
-  const student = students.find(item => item.studentId === studentId);
-  const value = Math.max(0, Number($('#penaltyValue').value) || 0);
+function normalizedStudentId(value) {
+  const digits = String(value || '').replace(/\D/g, '').slice(0, 5);
+  return digits ? digits.padStart(5, '0') : '';
+}
 
-  if (!student) throw new Error('학번을 찾을 수 없습니다. 예: 20626');
+function selectedPenaltyStudent() {
+  const studentId = normalizedStudentId($('#penaltyStudent').value);
+  return students.find(student => student.studentId === studentId);
+}
+
+function populateStudentOptions() {
+  const options = $('#studentOptions');
+  if (!options) return;
+
+  options.innerHTML = [...students]
+    .sort((a, b) => a.class - b.class || a.number - b.number)
+    .map(student => `<option value="${student.studentId}" label="${escapeHtml(student.name)} · 2학년 ${student.class}반"></option>`)
+    .join('');
+}
+
+function selectedPenaltyAmount() {
+  return roundPenalty(PENALTY_RULES.reduce((sum, rule) => {
+    return sum + rule.points * (penaltySelections[rule.key] || 0);
+  }, 0));
+}
+
+function renderPenaltyChecklist() {
+  const checklist = $('#penaltyChecklist');
+  if (!checklist) return;
+
+  checklist.innerHTML = PENALTY_RULES.map(rule => `
+    <div class="penalty-rule" data-rule="${rule.key}">
+      <label class="rule-select">
+        <input class="rule-check" type="checkbox" aria-label="${escapeHtml(rule.title)} 1회 선택">
+        <span><b>${escapeHtml(rule.title)}</b><small>${escapeHtml(rule.description)}</small></span>
+      </label>
+      <strong>+${formatPenalty(rule.points)}점</strong>
+      <div class="stepper" aria-label="${escapeHtml(rule.title)} 발생 횟수">
+        <button type="button" class="secondary" data-step="-1" aria-label="횟수 줄이기">−</button>
+        <output>0회</output>
+        <button type="button" data-step="1" aria-label="횟수 늘리기">+</button>
+      </div>
+    </div>
+  `).join('');
+}
+
+function updatePenaltyTool({ syncManualValue = false } = {}) {
+  const student = selectedPenaltyStudent();
+  const added = selectedPenaltyAmount();
+  const current = student ? roundPenalty(student.penalty) : 0;
+
+  PENALTY_RULES.forEach(rule => {
+    const row = document.querySelector(`[data-rule="${rule.key}"]`);
+    if (!row) return;
+    const count = penaltySelections[rule.key] || 0;
+    row.classList.toggle('selected', count > 0);
+    row.querySelector('.rule-check').checked = count > 0;
+    row.querySelector('output').textContent = `${count}회`;
+  });
+
+  $('#selectedStudent').innerHTML = student
+    ? `<b>${escapeHtml(student.name)}</b><span>${student.studentId} · 2학년 ${student.class}반</span>`
+    : '학번을 입력해 주세요.';
+  $('#selectedStudent').classList.toggle('valid', Boolean(student));
+  $('#currentPenalty').textContent = student ? `${formatPenalty(current)}점` : '-';
+  $('#addedPenalty').textContent = `+${formatPenalty(added)}점`;
+  $('#nextPenalty').textContent = student ? `${formatPenalty(current + added)}점` : '-';
+  $('#savePenalty').disabled = !student || added <= 0 || penaltySaving;
+  $('#overwritePenalty').disabled = !student || penaltySaving;
+
+  if (student && (syncManualValue || document.activeElement !== $('#penaltyValue'))) {
+    $('#penaltyValue').value = formatPenalty(current);
+  }
+}
+
+function updateSelectedStudent() {
+  const input = $('#penaltyStudent');
+  if (!input) return;
+  const student = selectedPenaltyStudent();
+
+  if (student) input.value = student.studentId;
+  updatePenaltyTool({ syncManualValue: Boolean(student) });
+}
+
+function resetPenaltySelection() {
+  penaltySelections = Object.fromEntries(PENALTY_RULES.map(rule => [rule.key, 0]));
+  updatePenaltyTool();
+}
+
+function showPenaltyMessage(message, type = 'success') {
+  const element = $('#penaltySaveMessage');
+  element.textContent = message;
+  element.className = `save-message ${type}`;
+}
+
+function selectedPenaltyReason() {
+  return PENALTY_RULES
+    .filter(rule => (penaltySelections[rule.key] || 0) > 0)
+    .map(rule => `${rule.title} ${penaltySelections[rule.key]}회`)
+    .join(' · ');
+}
+
+function appendRecentPenalty(student, points, reason) {
+  const item = {
+    studentId: student.studentId,
+    name: student.name,
+    points: roundPenalty(points),
+    reason,
+    date: new Intl.DateTimeFormat('ko-KR', { dateStyle: 'short', timeStyle: 'short' }).format(new Date())
+  };
+  recentPenalties = [item, ...recentPenalties].slice(0, 50);
+  localStorage.setItem('daejin-rift-recent-penalties', JSON.stringify(recentPenalties));
+}
+
+async function persistPenalty(student, value, metadata = {}) {
+  const safeValue = roundPenalty(Math.max(0, Number(value) || 0));
 
   if (CONFIG.APPS_SCRIPT_URL) {
     const form = new URLSearchParams();
     form.append('action', 'setPenalty');
     form.append('studentId', student.studentId);
-    form.append('penalty', String(value));
+    form.append('penalty', String(safeValue));
+    if (metadata.reason) form.append('reason', metadata.reason);
+    if (metadata.points) form.append('addedPenalty', String(roundPenalty(metadata.points)));
     const response = await fetch(CONFIG.APPS_SCRIPT_URL, { method: 'POST', body: form });
     if (!response.ok) throw new Error('벌점 저장에 실패했습니다.');
   } else {
-    penalties[student.studentId] = value;
-    localStorage.setItem('daejin-rift-penalties', JSON.stringify(penalties));
+    localStorage.setItem('daejin-rift-penalties', JSON.stringify({
+      ...penalties,
+      [student.studentId]: safeValue
+    }));
   }
 
-  student.penalty = value;
-  $('#penaltyStudent').value = student.studentId;
+  penalties[student.studentId] = safeValue;
+  student.penalty = safeValue;
+  return safeValue;
+}
+
+async function addSelectedPenalty() {
+  const student = selectedPenaltyStudent();
+  const added = selectedPenaltyAmount();
+
+  if (!student) throw new Error('학번을 확인해 주세요. 예: 20626');
+  if (added <= 0) throw new Error('발생한 벌점 항목을 하나 이상 선택해 주세요.');
+
+  const previous = student.penalty;
+  const reason = selectedPenaltyReason();
+  const saved = await persistPenalty(student, previous + added, { reason, points: added });
+  appendRecentPenalty(student, added, reason);
+  resetPenaltySelection();
   render();
+  updatePenaltyTool({ syncManualValue: true });
+  showPenaltyMessage(`${student.studentId} ${student.name}: ${formatPenalty(previous)}점 → ${formatPenalty(saved)}점으로 저장했습니다.`);
+}
+
+async function overwritePenalty() {
+  const student = selectedPenaltyStudent();
+  const value = Number($('#penaltyValue').value);
+
+  if (!student) throw new Error('학번을 확인해 주세요. 예: 20626');
+  if (!Number.isFinite(value) || value < 0) throw new Error('누적 벌점을 0 이상의 숫자로 입력해 주세요.');
+
+  const previous = student.penalty;
+  const saved = await persistPenalty(student, value);
+  render();
+  updatePenaltyTool({ syncManualValue: true });
+  showPenaltyMessage(`${student.studentId} ${student.name}: 누적 벌점을 ${formatPenalty(previous)}점에서 ${formatPenalty(saved)}점으로 수정했습니다.`);
+}
+
+async function runPenaltySave(action) {
+  if (!admin || penaltySaving) return;
+  penaltySaving = true;
+  showPenaltyMessage('저장 중입니다…', 'pending');
+  updatePenaltyTool();
+
+  try {
+    await action();
+  } catch (error) {
+    showPenaltyMessage(error.message, 'error');
+  } finally {
+    penaltySaving = false;
+    updatePenaltyTool();
+  }
 }
 
 function setup() {
+  renderPenaltyGuide();
+  renderPenaltyChecklist();
+  updatePenaltyTool();
   $('#refresh').onclick = refresh;
   $('#adminRefresh').onclick = refresh;
-  $('#adminToggle').onclick = () => { $('#admin').hidden = false; };
+  $('#adminToggle').onclick = () => {
+    $('#admin').hidden = false;
+    setTimeout(() => (admin ? $('#penaltyStudent') : $('#password')).focus(), 0);
+  };
   $('#closeAdmin').onclick = () => { $('#admin').hidden = true; };
   $('#loginForm').onsubmit = event => {
     event.preventDefault();
-    if ($('#password').value !== ADMIN_PASSWORD) return alert('걸리면 뒤진다');
+    if ($('#password').value !== ADMIN_PASSWORD) return alert('비밀번호가 올바르지 않습니다.');
     admin = true;
     $('#loginForm').hidden = true;
     $('#adminTools').hidden = false;
+    $('#penaltyStudent').focus();
   };
-  $('#penaltyStudent').onchange = event => {
-    const studentId = event.target.value.replace(/\D/g, '').padStart(5, '0');
-    $('#penaltyValue').value = students.find(student => student.studentId === studentId)?.penalty || 0;
+  $('#penaltyStudent').oninput = () => {
+    showPenaltyMessage('');
+    updateSelectedStudent();
   };
-  $('#savePenalty').onclick = () => admin && setPenalty().catch(error => alert(error.message));
+  $('#penaltyChecklist').onclick = event => {
+    const button = event.target.closest('[data-step]');
+    if (!button) return;
+    const row = button.closest('[data-rule]');
+    const key = row.dataset.rule;
+    penaltySelections[key] = Math.min(99, Math.max(0, (penaltySelections[key] || 0) + Number(button.dataset.step)));
+    showPenaltyMessage('');
+    updatePenaltyTool();
+  };
+  $('#penaltyChecklist').onchange = event => {
+    if (!event.target.matches('.rule-check')) return;
+    const key = event.target.closest('[data-rule]').dataset.rule;
+    penaltySelections[key] = event.target.checked ? Math.max(1, penaltySelections[key] || 0) : 0;
+    showPenaltyMessage('');
+    updatePenaltyTool();
+  };
+  $('#savePenalty').onclick = () => runPenaltySave(addSelectedPenalty);
+  $('#overwritePenalty').onclick = () => runPenaltySave(overwritePenalty);
+  $('#resetPenaltySelection').onclick = () => {
+    resetPenaltySelection();
+    showPenaltyMessage('선택한 항목을 초기화했습니다.', 'pending');
+  };
   $('#sheetLink').href = `https://docs.google.com/spreadsheets/d/${CONFIG.SHEET_ID}/edit`;
+  document.addEventListener('keydown', event => {
+    if (event.key === 'Escape' && !$('#admin').hidden) $('#admin').hidden = true;
+  });
 }
 
 async function refresh() {
