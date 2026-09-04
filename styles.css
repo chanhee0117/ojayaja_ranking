@@ -46,11 +46,9 @@ nav a:hover{color:var(--text)}
 #updated{color:var(--muted);font-size:10.5px;white-space:nowrap}
 
 main{padding:0 20px 88px}
-.hero{margin:46px auto 28px;display:flex;flex-direction:column;align-items:center;text-align:center}
+.hero{margin:40px auto 24px;display:flex;justify-content:center}
 .hero-logo{display:block;width:min(500px,90vw);height:auto;filter:drop-shadow(0 8px 30px rgba(0,0,0,.82)) drop-shadow(0 0 16px rgba(232,197,116,.28));animation:float 4s ease-in-out infinite}
 @keyframes float{50%{transform:translateY(-8px)}}
-.hero p{margin:8px 0 8px;color:var(--gold-soft);font:800 21px var(--display);letter-spacing:1px}
-.hero span{color:var(--muted);font-size:12px;letter-spacing:1.8px}
 
 .connection-notice{margin:0 auto 18px;padding:12px 16px;border:1px solid var(--line);background:rgba(13,20,36,.82);color:var(--muted);font-size:12px;text-align:center}
 .connection-notice.connected{border-color:rgba(63,217,199,.4);color:var(--teal);background:rgba(63,217,199,.08)}
@@ -88,8 +86,7 @@ input,select{width:100%;min-height:42px;padding:10px 12px;border:1px solid var(-
 input:focus,select:focus{outline:none;border-color:var(--gold);box-shadow:0 0 0 3px rgba(232,197,116,.15)}
 input[type="checkbox"]{width:17px;min-height:17px;height:17px;padding:0;accent-color:var(--teal)}
 
-table{width:100%;min-width:720px;border-collapse:collapse}
-#ranking table{min-width:860px}
+table{width:100%;min-width:620px;border-collapse:collapse}
 th,td{padding:14px 15px;text-align:left;border-bottom:1px solid rgba(122,152,214,.14)}
 th{position:sticky;top:0;z-index:2;background:#0c1526;color:var(--muted);font-size:10.5px;letter-spacing:.7px}
 td{font-size:13px}
@@ -276,8 +273,6 @@ aside label{display:block;margin:8px 0 6px;color:var(--muted);font-size:11px;fon
   .head{padding:0 14px}
   #updated{font-size:9px}
   .logo{font-size:12px}
-  .hero p{font-size:16px}
-  .hero span{font-size:10px;letter-spacing:1px}
   .overview{gap:7px}
   .overview article{min-height:78px;padding:13px}
   .overview b{font-size:18px}
