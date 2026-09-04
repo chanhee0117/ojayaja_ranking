@@ -3,7 +3,7 @@ const CONFIG = {
   SHEET_ID: '1tG8sd7XMOgkechtCgQOz9ROHF3jCcIe1tQcLOgWFbyg',
   SHEET_GID: 1239065071,
 
-  // 실제 구조: 1행 제목, 2행부터 학생 / A열=총 자습시수, B열=반, C열=번호, D열=이름, E열=벌점
+  // Apps Script가 제목을 기준으로 학생 열과 시작 행을 자동 인식하며, 벌점은 항상 E열에 저장합니다.
   HOURS_COLUMN: 1,
   PENALTY_COLUMN: 5,
 
@@ -12,5 +12,5 @@ const CONFIG = {
 
   // Code.gs를 웹 앱으로 배포한 뒤 생성된 /exec 주소를 붙여 넣으세요.
   // 비어 있으면 공개/로그인 가능한 시트에서 읽기만 시도하며 벌점 저장은 차단됩니다.
-  APPS_SCRIPT_URL: 'https://script.google.com/macros/s/AKfycbzPdJNtl_nZFRx1pVYbQr_RQDzX2KX6XI60ks-9fBrPFKbzFPya2RhoMzpS7Age5kFSsg/exec'
+  APPS_SCRIPT_URL: 'https://script.google.com/macros/s/AKfycbxHhwBqBtzwti4JvMXkz4mlR9uR5eUXNX8L8lfasSnPdFgqC4cwI4VgUtEJfQ2YjMovQg/exec'
 };
