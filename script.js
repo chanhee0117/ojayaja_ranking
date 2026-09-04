@@ -4,15 +4,15 @@ const PENALTY_RULES = [
     key: 'restroom',
     title: '화장실 및 준비물',
     description: '화장실은 자습 시간에 하루 3회 초과부터 감점',
-    points: 0.2
+    points: 1
   },
-  { key: 'sleep', title: '자습 중 수면', description: '발생 횟수만큼 입력', points: 0.5 },
-  { key: 'late', title: '지각', description: '발생 횟수만큼 입력', points: 0.3 },
+  { key: 'sleep', title: '자습 중 수면', description: '발생 횟수만큼 입력', points: 1 },
+  { key: 'late', title: '지각', description: '발생 횟수만큼 입력', points: 1 },
   {
     key: 'noise',
     title: '자습실 내 소란 및 친목 행위',
     description: '눈 맞춤·제스처·톡 치고 지나가기 등',
-    points: 0.5
+    points: 1
   },
   {
     key: 'device',
@@ -123,14 +123,8 @@ async function loadFromSheetView() {
   const data = await loadSheetJsonp();
   return { students: (data.table?.rows || []).map(row => {
     const values = (row.c || []).map(cell => cell?.v);
-    return { class: values[0], number: values[1], name: values[2], hours: values[3], penalty: values[4] };
+    return { class: values[1], number: values[2], name: values[3], hours: values[0], penalty: values[4] };
   }), recentPenalties: [] };
-}
-
-function setConnectionNotice(message, tone = 'connected') {
-  const notice = $('#connectionNotice');
-  notice.textContent = message;
-  notice.className = `connection-notice ${tone}`;
 }
 
 async function load() {
@@ -140,7 +134,7 @@ async function load() {
 
   students = sortStudents(payload.students.map(normalizeStudent).filter(Boolean));
   recentPenalties = payload.recentPenalties;
-  if (!students.length) throw new Error('A열 반, B열 번호, C열 이름, D열 자습시간 형식의 학생 데이터를 찾지 못했습니다.');
+  if (!students.length) throw new Error('A열 총 자습시수, B열 반, C열 번호, D열 이름 형식의 학생 데이터를 찾지 못했습니다.');
 
   render();
   populateStudentControls();
@@ -149,24 +143,9 @@ async function load() {
     dateStyle: 'short', timeStyle: 'short'
   }).format(new Date());
 
-  if (CONFIG.APPS_SCRIPT_URL) {
-    setConnectionNotice(`실제 스프레드시트 연결 완료 · 자습시간 읽기 / 누적 벌점 쓰기 · ${CONFIG.EDITOR_ACCOUNT}`);
-  } else {
-    setConnectionNotice('시트 읽기 전용 상태입니다. 벌점 저장을 사용하려면 배포한 Apps Script /exec 주소를 config.js에 입력하세요.', 'warning');
-  }
 }
 
 /* ---------------- 화면 렌더링 ---------------- */
-function renderOverview() {
-  const clean = students.filter(student => student.penalty === 0).length;
-  const totalHours = students.reduce((sum, student) => sum + student.hours, 0);
-  const total = roundPenalty(students.reduce((sum, student) => sum + student.penalty, 0));
-  $('#totalStudents').textContent = `${students.length}명`;
-  $('#cleanStudents').textContent = `${clean}명`;
-  $('#totalHours').textContent = `${totalHours.toFixed(1)}h`;
-  $('#totalPenalty').textContent = `${formatPenalty(total)}점`;
-}
-
 function reflectedHours(student) {
   return student.hours - student.penalty * PENALTY_HOURS_WEIGHT;
 }
@@ -315,7 +294,6 @@ function showClass(classNumber) {
 }
 
 function render() {
-  renderOverview();
   renderTop3();
   renderRanking();
   renderPenaltyFeed();
@@ -572,11 +550,9 @@ function setup() {
 
 async function refresh() {
   $('#refresh').disabled = true;
-  setConnectionNotice('스프레드시트에서 자습시간과 누적 벌점을 불러오는 중…', 'loading');
   try {
     await load();
   } catch (error) {
-    setConnectionNotice(error.message, 'error');
     $('#top3').innerHTML = `<p class="feed-empty">${escapeHtml(error.message)}</p>`;
     $('#rankingBody').innerHTML = `<tr><td colspan="5" class="empty-table">${escapeHtml(error.message)}</td></tr>`;
     $('#penaltyRankingBody').innerHTML = '<tr><td colspan="5" class="empty-table">시트 연결 후 표시됩니다.</td></tr>';
