@@ -121,9 +121,21 @@ function loadSheetJsonp() {
 
 async function loadFromSheetView() {
   const data = await loadSheetJsonp();
+  const labels = (data.table?.cols || []).map(column => String(column?.label || '').replace(/\s/g, ''));
+  const classIndex = labels.indexOf('반');
+  const numberIndex = labels.indexOf('번호');
+  const nameIndex = labels.indexOf('이름');
+  const hoursIndex = labels.findIndex(label => label.includes('총시수') || label.includes('자습시수') || label.includes('자습시간'));
+  const penaltyIndex = 4;
   return { students: (data.table?.rows || []).map(row => {
     const values = (row.c || []).map(cell => cell?.v);
-    return { class: values[1], number: values[2], name: values[3], hours: values[0], penalty: values[4] };
+    return {
+      class: values[classIndex],
+      number: values[numberIndex],
+      name: values[nameIndex],
+      hours: values[hoursIndex],
+      penalty: values[penaltyIndex]
+    };
   }), recentPenalties: [] };
 }
 
@@ -134,7 +146,7 @@ async function load() {
 
   students = sortStudents(payload.students.map(normalizeStudent).filter(Boolean));
   recentPenalties = payload.recentPenalties;
-  if (!students.length) throw new Error('A열 총 자습시수, B열 반, C열 번호, D열 이름 형식의 학생 데이터를 찾지 못했습니다.');
+  if (!students.length) throw new Error('시트에서 반·번호·이름·총시수 형식의 학생 데이터를 찾지 못했습니다.');
 
   render();
   populateStudentControls();
