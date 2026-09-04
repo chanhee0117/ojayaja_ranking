@@ -60,9 +60,8 @@ function normalizedStudentId(value) {
 }
 
 function penaltyStatus(penalty) {
-  if (penalty >= 11) return { label: '퇴출 기준', tone: 'critical' };
-  if (penalty >= 7) return { label: '상담 필요', tone: 'danger' };
-  if (penalty >= 3) return { label: '관리 필요', tone: 'warning' };
+  if (penalty >= 4) return { label: '진경호출', tone: 'critical' };
+  if (penalty >= 2) return { label: '위험', tone: 'warning' };
   if (penalty > 0) return { label: '주의', tone: 'caution' };
   return { label: '청정', tone: 'clean' };
 }
@@ -216,10 +215,8 @@ function renderRanking() {
       <td>#${index + 1}</td>
       <td>${student.studentId}</td>
       <td><b>${escapeHtml(student.name)}</b></td>
-      <td>2학년 ${student.class}반</td>
       <td>${student.hours.toFixed(1)}h</td>
       <td class="${student.penalty > 0 ? 'danger' : 'clean-text'}">${formatPenalty(student.penalty)}점</td>
-      <td>${reflectedHours(student).toFixed(1)}h</td>
     </tr>`).join('');
 }
 
@@ -238,15 +235,14 @@ function renderPenaltyRanking() {
   $('#penaltyRankingBody').innerHTML = penalized.length ? penalized.map((student, index) => {
     const status = penaltyStatus(student.penalty);
     return `
-      <tr class="${student.penalty >= 11 ? 'expelled' : ''}">
+      <tr class="${student.penalty >= 4 ? 'expelled' : ''}">
         <td>#${index + 1}</td>
         <td>${student.studentId}</td>
         <td><b>${escapeHtml(student.name)}</b></td>
-        <td>2학년 ${student.class}반</td>
         <td class="danger">${formatPenalty(student.penalty)}점</td>
         <td><span class="status-chip ${status.tone}">${status.label}</span></td>
       </tr>`;
-  }).join('') : '<tr><td colspan="6" class="empty-table">현재 벌점이 있는 학생이 없습니다.</td></tr>';
+  }).join('') : '<tr><td colspan="5" class="empty-table">현재 벌점이 있는 학생이 없습니다.</td></tr>';
 }
 
 function renderCleanZone() {
@@ -582,8 +578,8 @@ async function refresh() {
   } catch (error) {
     setConnectionNotice(error.message, 'error');
     $('#top3').innerHTML = `<p class="feed-empty">${escapeHtml(error.message)}</p>`;
-    $('#rankingBody').innerHTML = `<tr><td colspan="7" class="empty-table">${escapeHtml(error.message)}</td></tr>`;
-    $('#penaltyRankingBody').innerHTML = '<tr><td colspan="6" class="empty-table">시트 연결 후 표시됩니다.</td></tr>';
+    $('#rankingBody').innerHTML = `<tr><td colspan="5" class="empty-table">${escapeHtml(error.message)}</td></tr>`;
+    $('#penaltyRankingBody').innerHTML = '<tr><td colspan="5" class="empty-table">시트 연결 후 표시됩니다.</td></tr>';
   } finally {
     $('#refresh').disabled = false;
   }
