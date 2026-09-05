@@ -69,6 +69,13 @@ function penaltyStatus(penalty) {
   return { label: '청정', tone: 'clean' };
 }
 
+function statusChipHtml(status) {
+  if (status.tone === 'inferno') {
+    return `<span class="status-chip inferno"><i class="flame-emoji flame-left" aria-hidden="true">🔥</i><span class="inferno-label">${escapeHtml(status.label)}</span><i class="flame-emoji flame-right" aria-hidden="true">🔥</i></span>`;
+  }
+  return `<span class="status-chip ${status.tone}">${escapeHtml(status.label)}</span>`;
+}
+
 function normalizeStudent(record) {
   const classNumber = Number(record.class);
   const number = Number(record.number);
@@ -241,7 +248,7 @@ function renderPenaltyRanking() {
         <td>${student.studentId}</td>
         <td><b>${escapeHtml(student.name)}</b></td>
         <td class="danger">${formatPenalty(student.penalty)}점</td>
-        <td><span class="status-chip ${status.tone}">${status.label}</span></td>
+        <td>${statusChipHtml(status)}</td>
       </tr>`;
   }).join('') : '<tr><td colspan="5" class="empty-table">현재 벌점이 있는 학생이 없습니다.</td></tr>';
 }
@@ -353,7 +360,7 @@ function renderSearchResult(student) {
       <div><span>반영 점수</span><b>${reflectedHours(student).toFixed(1)}h</b></div>
       <div><span>전체 순위</span><b>${schoolPosition}위</b></div>
       <div><span>반 순위</span><b>${classPosition}위</b></div>
-      <div><span>상태</span><b><span class="status-chip ${status.tone}">${status.label}</span></b></div>
+      <div><span>상태</span><b>${statusChipHtml(status)}</b></div>
     </div>`;
 }
 
