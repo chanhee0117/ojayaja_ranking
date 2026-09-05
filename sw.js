@@ -8,7 +8,9 @@ const APP_SHELL = [
   './manifest.webmanifest',
   './icon-192.png',
   './icon-512.png',
-  './apple-touch-icon.png'
+  './apple-touch-icon.png',
+  './leagueof-hd.jpg',
+  './Gemini_Generated_Image_o31s7eo31s7eo31s-Photoroom.png'
 ];
 
 self.addEventListener('install', event => {

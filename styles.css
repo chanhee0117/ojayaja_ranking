@@ -25,7 +25,8 @@ body::before{
   background:
     radial-gradient(1100px 620px at 10% -10%,rgba(63,217,199,.14),transparent 58%),
     radial-gradient(900px 540px at 105% 8%,rgba(95,157,255,.15),transparent 55%),
-    linear-gradient(180deg,#071325,#030812 58%,#02050b);
+    linear-gradient(180deg,rgba(2,4,9,.64),rgba(2,4,9,.72) 58%,rgba(2,4,9,.92)),
+    url('leagueof-hd.jpg') center top/cover no-repeat var(--bg);
 }
 ::selection{background:var(--gold);color:#09101d}
 [hidden]{display:none!important}
@@ -47,11 +48,8 @@ nav a:hover{color:var(--text)}
 #updated{color:var(--muted);font-size:10.5px;white-space:nowrap}
 
 main{padding:0 20px 88px}
-.hero{margin:40px auto 24px;display:flex;align-items:center;justify-content:center;gap:clamp(24px,6vw,72px)}
-.hero-logo{display:block;width:min(290px,36vw);height:auto;border-radius:24%;filter:drop-shadow(0 8px 30px rgba(0,0,0,.82)) drop-shadow(0 0 16px rgba(63,217,199,.22));animation:float 4s ease-in-out infinite}
-.hero-copy span{color:var(--teal);font-size:11px;font-weight:800;letter-spacing:.18em}
-.hero-copy h1{margin:10px 0 12px;color:var(--gold-soft);font:800 clamp(34px,5vw,66px)/.98 var(--display);letter-spacing:-.04em}
-.hero-copy p{margin:0;color:var(--muted);font-size:13px}
+.hero{margin:40px auto 24px;display:flex;justify-content:center}
+.hero-logo{display:block;width:min(500px,90vw);height:auto;filter:drop-shadow(0 8px 30px rgba(0,0,0,.82)) drop-shadow(0 0 16px rgba(232,197,116,.28));animation:float 4s ease-in-out infinite}
 @keyframes float{50%{transform:translateY(-8px)}}
 
 section{margin-top:56px;scroll-margin-top:92px}
@@ -235,7 +233,7 @@ aside label{display:block;margin:8px 0 6px;color:var(--muted);font-size:11px;fon
   nav{display:none}
   .head{justify-content:space-between}
   .hero{margin-top:32px}
-  .hero-logo{width:min(220px,42vw)}
+  .hero-logo{width:300px}
   .top3{grid-template-columns:1fr}
   .top-card.place-1{order:1;transform:none}
   .top-card.place-1:hover{transform:translateY(-5px)}
@@ -261,10 +259,6 @@ aside label{display:block;margin:8px 0 6px;color:var(--muted);font-size:11px;fon
   .penalty-rule .stepper{grid-column:1/-1}
 }
 
-@media(max-width:620px){
-  .hero{flex-direction:column;text-align:center}
-  .hero-logo{width:180px}
-}
 
 @media(max-width:560px){
   main{padding-left:14px;padding-right:14px}
