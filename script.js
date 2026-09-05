@@ -22,9 +22,8 @@ const PENALTY_RULES = [
   }
 ];
 
-const ADMIN_PASSWORD = 'daejin1234';
 const PENALTY_HOURS_WEIGHT = 2;
-const REQUIRED_API_VERSION = 'v41-clear-recent';
+const REQUIRED_API_VERSION = 'v44-secure-pwa';
 const $ = selector => document.querySelector(selector);
 
 let students = [];
@@ -33,6 +32,8 @@ let admin = false;
 let saving = false;
 let activeApiVersion = '';
 let selections = emptySelections();
+let accessPassword = '';
+let adminPassword = '';
 
 function emptySelections() {
   return Object.fromEntries(PENALTY_RULES.map(rule => [rule.key, 0]));
@@ -62,18 +63,11 @@ function normalizedStudentId(value) {
 }
 
 function penaltyStatus(penalty) {
-  if (penalty >= 10) return { label: '진경주체불가', tone: 'inferno' };
+  if (penalty >= 10) return { label: '진경주체불가', tone: 'critical' };
   if (penalty >= 4) return { label: '진경호출', tone: 'critical' };
   if (penalty >= 2) return { label: '위험', tone: 'warning' };
   if (penalty > 0) return { label: '주의', tone: 'caution' };
   return { label: '청정', tone: 'clean' };
-}
-
-function statusChipHtml(status) {
-  if (status.tone === 'inferno') {
-    return `<span class="status-chip inferno"><i class="flame-emoji flame-left" aria-hidden="true">🔥</i><span class="inferno-label">${escapeHtml(status.label)}</span><i class="flame-emoji flame-right" aria-hidden="true">🔥</i></span>`;
-  }
-  return `<span class="status-chip ${status.tone}">${escapeHtml(status.label)}</span>`;
 }
 
 function normalizeStudent(record) {
@@ -98,9 +92,12 @@ function sortStudents(list) {
 
 /* ---------------- 스프레드시트 연결 ---------------- */
 async function loadFromAppsScript() {
-  const separator = CONFIG.APPS_SCRIPT_URL.includes('?') ? '&' : '?';
-  const freshUrl = `${CONFIG.APPS_SCRIPT_URL}${separator}_=${Date.now()}`;
-  const response = await fetch(freshUrl, { cache: 'no-store' });
+  const form = new URLSearchParams({
+    action: 'read',
+    apiVersion: REQUIRED_API_VERSION,
+    accessPassword
+  });
+  const response = await fetch(CONFIG.APPS_SCRIPT_URL, { method: 'POST', body: form, cache: 'no-store' });
   if (!response.ok) throw new Error('Apps Script에서 학생 정보를 불러오지 못했습니다.');
   const data = await response.json();
   if (data.apiVersion !== REQUIRED_API_VERSION) {
@@ -157,9 +154,8 @@ async function loadFromSheetView() {
 }
 
 async function load() {
-  const payload = CONFIG.APPS_SCRIPT_URL
-    ? await loadFromAppsScript()
-    : await loadFromSheetView();
+  if (!CONFIG.APPS_SCRIPT_URL) throw new Error('config.js에 Apps Script /exec 주소를 먼저 입력해 주세요.');
+  const payload = await loadFromAppsScript();
 
   students = sortStudents(payload.students.map(normalizeStudent).filter(Boolean));
   recentPenalties = payload.recentPenalties;
@@ -248,7 +244,7 @@ function renderPenaltyRanking() {
         <td>${student.studentId}</td>
         <td><b>${escapeHtml(student.name)}</b></td>
         <td class="danger">${formatPenalty(student.penalty)}점</td>
-        <td>${statusChipHtml(status)}</td>
+        <td><span class="status-chip ${status.tone}">${status.label}</span></td>
       </tr>`;
   }).join('') : '<tr><td colspan="5" class="empty-table">현재 벌점이 있는 학생이 없습니다.</td></tr>';
 }
@@ -360,7 +356,7 @@ function renderSearchResult(student) {
       <div><span>반영 점수</span><b>${reflectedHours(student).toFixed(1)}h</b></div>
       <div><span>전체 순위</span><b>${schoolPosition}위</b></div>
       <div><span>반 순위</span><b>${classPosition}위</b></div>
-      <div><span>상태</span><b>${statusChipHtml(status)}</b></div>
+      <div><span>상태</span><b><span class="status-chip ${status.tone}">${status.label}</span></b></div>
     </div>`;
 }
 
@@ -451,7 +447,8 @@ async function persistPenalty(student, value, metadata = {}) {
     action: 'setPenalty',
     apiVersion: REQUIRED_API_VERSION,
     studentId: student.studentId,
-    penalty: String(safeValue)
+    penalty: String(safeValue),
+    adminPassword
   });
   if (metadata.reason) form.append('reason', metadata.reason);
   if (metadata.points > 0) form.append('addedPenalty', String(roundPenalty(metadata.points)));
@@ -514,7 +511,7 @@ async function clearRecentPenaltyHistory() {
     const form = new URLSearchParams({
       action: 'clearRecentPenalties',
       apiVersion: REQUIRED_API_VERSION,
-      adminPassword: ADMIN_PASSWORD
+      adminPassword
     });
     const response = await fetch(CONFIG.APPS_SCRIPT_URL, { method: 'POST', body: form });
     if (!response.ok) throw new Error('최근 벌점 기록 초기화에 실패했습니다.');
@@ -565,13 +562,31 @@ function setup() {
     setTimeout(() => (admin ? $('#penaltyStudent') : $('#password')).focus(), 0);
   };
   $('#closeAdmin').onclick = () => { $('#admin').hidden = true; };
-  $('#loginForm').onsubmit = event => {
+  $('#loginForm').onsubmit = async event => {
     event.preventDefault();
-    if ($('#password').value !== ADMIN_PASSWORD) return alert('비밀번호가 올바르지 않습니다.');
-    admin = true;
-    $('#loginForm').hidden = true;
-    $('#adminTools').hidden = false;
-    $('#penaltyStudent').focus();
+    const candidate = $('#password').value;
+    const submitButton = $('#loginForm button');
+    submitButton.disabled = true;
+    try {
+      const form = new URLSearchParams({
+        action: 'verifyAdmin',
+        apiVersion: REQUIRED_API_VERSION,
+        adminPassword: candidate
+      });
+      const response = await fetch(CONFIG.APPS_SCRIPT_URL, { method: 'POST', body: form });
+      const result = await response.json();
+      if (!response.ok || result.ok === false) throw new Error(result.message || '관리자 인증에 실패했습니다.');
+      adminPassword = candidate;
+      admin = true;
+      $('#password').value = '';
+      $('#loginForm').hidden = true;
+      $('#adminTools').hidden = false;
+      $('#penaltyStudent').focus();
+    } catch (error) {
+      alert(error.message || '관리자 인증에 실패했습니다.');
+    } finally {
+      submitButton.disabled = false;
+    }
   };
 
   $('#penaltyStudent').oninput = () => {
@@ -605,6 +620,27 @@ function setup() {
     if (event.key === 'Escape' && !$('#admin').hidden) $('#admin').hidden = true;
   });
 
+  $('#accessForm').onsubmit = async event => {
+    event.preventDefault();
+    const candidate = $('#accessPassword').value;
+    const submitButton = $('#accessForm button');
+    submitButton.disabled = true;
+    $('#accessMessage').textContent = '학생 정보를 확인하는 중입니다…';
+    accessPassword = candidate;
+    try {
+      await load();
+      $('#accessPassword').value = '';
+      $('#accessGate').hidden = true;
+      $('#protectedApp').hidden = false;
+    } catch (error) {
+      accessPassword = '';
+      $('#accessMessage').textContent = error.message || '접속 비밀번호를 확인해 주세요.';
+      $('#accessMessage').className = 'save-message error';
+    } finally {
+      submitButton.disabled = false;
+    }
+  };
+
   updatePenaltyTool();
 }
 
@@ -622,4 +658,7 @@ async function refresh() {
 }
 
 setup();
-refresh();
+
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => navigator.serviceWorker.register('./sw.js').catch(() => {}));
+}
