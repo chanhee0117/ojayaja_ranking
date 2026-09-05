@@ -62,7 +62,7 @@ function normalizedStudentId(value) {
 }
 
 function penaltyStatus(penalty) {
-  if (penalty >= 10) return { label: '진경주체불가', tone: 'critical' };
+  if (penalty >= 10) return { label: '진경주체불가', tone: 'inferno' };
   if (penalty >= 4) return { label: '진경호출', tone: 'critical' };
   if (penalty >= 2) return { label: '위험', tone: 'warning' };
   if (penalty > 0) return { label: '주의', tone: 'caution' };
