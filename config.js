@@ -7,6 +7,9 @@ const CONFIG = {
   HOURS_COLUMN: 4,
   PENALTY_COLUMN: 5,
 
+  // 시범 운영: 2학년 6반만 표시. 정식 운영 때 []로 바꾸면 전 학급이 표시됩니다.
+  VISIBLE_CLASSES: [6],
+
   // 이 계정이 시트 편집자로 추가된 뒤 Apps Script를 배포합니다.
   EDITOR_ACCOUNT: '202620626@dj.hs.kr',
 
