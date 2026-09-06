@@ -32,7 +32,6 @@ let admin = false;
 let saving = false;
 let activeApiVersion = '';
 let selections = emptySelections();
-let accessPassword = '';
 let adminPassword = '';
 
 function emptySelections() {
@@ -94,8 +93,7 @@ function sortStudents(list) {
 async function loadFromAppsScript() {
   const form = new URLSearchParams({
     action: 'read',
-    apiVersion: REQUIRED_API_VERSION,
-    accessPassword
+    apiVersion: REQUIRED_API_VERSION
   });
   const response = await fetch(CONFIG.APPS_SCRIPT_URL, { method: 'POST', body: form, cache: 'no-store' });
   if (!response.ok) throw new Error('Apps Script에서 학생 정보를 불러오지 못했습니다.');
@@ -157,8 +155,11 @@ async function load() {
   if (!CONFIG.APPS_SCRIPT_URL) throw new Error('config.js에 Apps Script /exec 주소를 먼저 입력해 주세요.');
   const payload = await loadFromAppsScript();
 
-  students = sortStudents(payload.students.map(normalizeStudent).filter(Boolean));
-  recentPenalties = payload.recentPenalties;
+  const visibleClasses = Array.isArray(CONFIG.VISIBLE_CLASSES) ? CONFIG.VISIBLE_CLASSES.map(Number) : [];
+  const isVisibleClass = classNumber => !visibleClasses.length || visibleClasses.includes(Number(classNumber));
+  students = sortStudents(payload.students.map(normalizeStudent).filter(student => student && isVisibleClass(student.class)));
+  const visibleIds = new Set(students.map(student => student.studentId));
+  recentPenalties = payload.recentPenalties.filter(record => visibleIds.has(String(record.studentId || '')));
   if (!students.length) throw new Error('시트에서 반·번호·이름·총시수 형식의 학생 데이터를 찾지 못했습니다.');
 
   render();
@@ -620,27 +621,6 @@ function setup() {
     if (event.key === 'Escape' && !$('#admin').hidden) $('#admin').hidden = true;
   });
 
-  $('#accessForm').onsubmit = async event => {
-    event.preventDefault();
-    const candidate = $('#accessPassword').value;
-    const submitButton = $('#accessForm button');
-    submitButton.disabled = true;
-    $('#accessMessage').textContent = '학생 정보를 확인하는 중입니다…';
-    accessPassword = candidate;
-    try {
-      await load();
-      $('#accessPassword').value = '';
-      $('#accessGate').hidden = true;
-      $('#protectedApp').hidden = false;
-    } catch (error) {
-      accessPassword = '';
-      $('#accessMessage').textContent = error.message || '접속 비밀번호를 확인해 주세요.';
-      $('#accessMessage').className = 'save-message error';
-    } finally {
-      submitButton.disabled = false;
-    }
-  };
-
   updatePenaltyTool();
 }
 
@@ -658,6 +638,7 @@ async function refresh() {
 }
 
 setup();
+refresh();
 
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => navigator.serviceWorker.register('./sw.js').catch(() => {}));
