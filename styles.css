@@ -95,36 +95,45 @@ tbody tr:hover{background:rgba(63,217,199,.045)}
 .status-chip.danger,.status-chip.critical{color:#ff9aad;border-color:rgba(255,100,126,.42);background:rgba(255,100,126,.08)}
 
 /* 블랙리스트 현상수배 TOP 3 */
-.top3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:clamp(18px,3vw,38px);align-items:end;margin:28px auto 0;padding:24px 18px 18px;perspective:1200px}
+.top3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:clamp(16px,2.2vw,28px);align-items:end;max-width:1040px;margin:20px auto 0;padding:20px 18px 12px;perspective:1200px}
 .top-card{position:relative;min-width:0;text-align:center;transition:transform .3s ease,filter .3s ease;filter:drop-shadow(0 22px 22px rgba(0,0,0,.58))}
-.top-card:hover{z-index:3;transform:translateY(-10px) rotate(0deg) scale(1.025);filter:drop-shadow(0 30px 26px rgba(0,0,0,.72))}
-.top-card.place-1{order:2;z-index:2;transform:translateY(-22px) rotate(.35deg) scale(1.055)}
-.top-card.place-1:hover{transform:translateY(-31px) rotate(0deg) scale(1.075)}
-.top-card.place-2{order:1;transform:rotate(-1.8deg)}
-.top-card.place-3{order:3;transform:rotate(1.7deg)}
-.wanted-paper{position:relative;isolation:isolate;min-height:510px;padding:28px 27px 25px;overflow:hidden;color:#2b170c;background:linear-gradient(rgba(214,168,91,.18),rgba(86,45,19,.08)),url('parchment-wanted.jpg') center/cover;border:1px solid #7a4825;clip-path:polygon(2% 1%,14% 2%,27% .5%,43% 1.5%,58% .3%,73% 1.6%,87% .4%,99% 2%,98.5% 17%,99.5% 34%,98.7% 52%,99.4% 69%,98% 84%,99% 98%,85% 99.5%,70% 98.7%,55% 99.5%,39% 98.4%,24% 99.6%,2% 98%,1.5% 82%,.6% 66%,1.4% 48%,.5% 31%,1.5% 15%);box-shadow:inset 0 0 36px rgba(72,30,6,.38)}
+.top-card:hover{z-index:3;transform:translateY(-7px) rotate(0deg) scale(1.018);filter:drop-shadow(0 27px 24px rgba(0,0,0,.7))}
+.top-card.place-1{order:2;z-index:2;transform:translateY(-15px) rotate(.3deg) scale(1.035)}
+.top-card.place-1:hover{transform:translateY(-21px) rotate(0deg) scale(1.05)}
+.top-card.place-2{order:1;transform:rotate(-1.2deg)}
+.top-card.place-3{order:3;transform:rotate(1.15deg)}
+.wanted-paper{position:relative;isolation:isolate;min-height:418px;padding:21px 22px 19px;overflow:hidden;color:#2b170c;background:linear-gradient(145deg,rgba(16,94,91,.1),transparent 36%,rgba(214,168,91,.18) 70%,rgba(86,45,19,.1)),url('parchment-wanted.jpg') center/cover;border:1px solid #8c6431;clip-path:polygon(2% 1%,14% 2%,27% .5%,43% 1.5%,58% .3%,73% 1.6%,87% .4%,99% 2%,98.5% 17%,99.5% 34%,98.7% 52%,99.4% 69%,98% 84%,99% 98%,85% 99.5%,70% 98.7%,55% 99.5%,39% 98.4%,24% 99.6%,2% 98%,1.5% 82%,.6% 66%,1.4% 48%,.5% 31%,1.5% 15%);box-shadow:inset 0 0 32px rgba(72,30,6,.38),0 0 0 1px rgba(63,217,199,.09)}
 .wanted-paper::before{content:'';position:absolute;inset:9px;z-index:-1;border:3px double rgba(66,31,12,.72);box-shadow:inset 0 0 0 1px rgba(244,213,149,.35)}
 .wanted-paper::after{content:'';position:absolute;inset:0;z-index:-1;background:radial-gradient(circle at 18% 14%,rgba(255,245,197,.34),transparent 26%),radial-gradient(circle at 85% 84%,rgba(84,34,8,.22),transparent 28%),linear-gradient(115deg,transparent 47%,rgba(79,38,14,.09) 49%,transparent 52%);mix-blend-mode:multiply;pointer-events:none}
-.wanted-rank{display:flex;justify-content:space-between;align-items:center;margin:0 4px 6px;padding-bottom:7px;border-bottom:1px solid rgba(63,29,11,.5);font:900 11px Georgia,serif;letter-spacing:1.4px}
-.wanted-rank b{padding:4px 8px;border:1px solid currentColor;border-radius:999px;font-size:9px}
+.wanted-rank{display:flex;justify-content:space-between;align-items:center;margin:0 4px 4px;padding-bottom:6px;border-bottom:1px solid rgba(63,29,11,.5);font:900 10px Georgia,serif;letter-spacing:1.3px}
+.wanted-rank b{padding:3px 7px;border:1px solid currentColor;border-radius:999px;font-size:8px}
 .place-1 .wanted-rank b{color:#8b5a0a;background:rgba(242,189,62,.16)}
 .place-2 .wanted-rank b{color:#57534b;background:rgba(210,208,197,.22)}
 .place-3 .wanted-rank b{color:#77401e;background:rgba(186,105,54,.18)}
-.wanted-kicker{margin:8px 0 0!important;color:#50301c!important;font:700 8px Georgia,serif!important;letter-spacing:2.2px}
-.wanted-title{margin-top:1px;font:900 clamp(38px,4.1vw,55px)/.95 Georgia,'Times New Roman',serif;letter-spacing:2px;text-shadow:1px 2px 0 rgba(255,236,181,.6)}
-.wanted-subtitle{margin:3px 0 12px;font:900 10px Georgia,serif;letter-spacing:3.2px}
-.wanted-portrait{position:relative;height:220px;margin:0 3px 13px;border:4px double rgba(53,25,10,.78);background:radial-gradient(circle at 50% 34%,rgba(245,213,144,.7),rgba(157,103,51,.2) 59%,rgba(65,30,9,.25));box-shadow:inset 0 0 26px rgba(67,28,6,.35)}
+.wanted-kicker{margin:6px 0 0!important;color:#50301c!important;font:700 7px Georgia,serif!important;letter-spacing:1.9px}
+.wanted-title{margin-top:1px;font:900 clamp(31px,3.25vw,43px)/.95 Georgia,'Times New Roman',serif;letter-spacing:1.8px;text-shadow:1px 2px 0 rgba(255,236,181,.6)}
+.wanted-subtitle{margin:2px 0 9px;font:900 8px Georgia,serif;letter-spacing:2.8px}
+.wanted-portrait{position:relative;height:166px;margin:0 3px 10px;border:3px double rgba(53,25,10,.78);background:radial-gradient(circle at 50% 32%,rgba(245,213,144,.78),rgba(157,103,51,.21) 58%,rgba(5,34,48,.18));box-shadow:inset 0 0 24px rgba(67,28,6,.34)}
+.wanted-portrait::before,.wanted-portrait::after{content:'';position:absolute;z-index:1;width:18px;height:18px;pointer-events:none}
+.wanted-portrait::before{top:7px;left:7px;border-top:2px solid rgba(22,99,94,.58);border-left:2px solid rgba(22,99,94,.58)}
+.wanted-portrait::after{right:7px;bottom:7px;border-right:2px solid rgba(145,101,21,.62);border-bottom:2px solid rgba(145,101,21,.62)}
 .wanted-portrait svg{width:100%;height:100%;overflow:visible}
-.wanted-portrait circle,.wanted-portrait path{fill:none;stroke:#2a160d;stroke-width:9;stroke-linecap:round;stroke-linejoin:round;filter:drop-shadow(1px 1px 0 rgba(255,230,168,.4))}
-.wanted-portrait .wanted-shadow{stroke-width:4;opacity:.42}
-.wanted-portrait text{fill:#2a160d;font:900 22px Pretendard,sans-serif;text-anchor:middle;dominant-baseline:middle;letter-spacing:-1px}
-.wanted-paper h3{margin:0;font:900 25px/1.05 Georgia,Pretendard,serif;letter-spacing:1px}
-.wanted-id{margin:6px 0 0!important;color:#56331e!important;font:700 10.5px Georgia,Pretendard,serif!important}
-.wanted-bounty{display:flex;justify-content:center;align-items:baseline;gap:8px;margin-top:14px;padding-top:10px;border-top:1px solid rgba(67,31,11,.48)}
-.wanted-bounty span{font:900 10px Georgia,serif;letter-spacing:1.5px}
-.wanted-bounty strong{color:#35190b;font:900 20px Georgia,'Times New Roman',serif}
-.wanted-paper>small{display:block;margin-top:5px;color:#624029;font:700 9.5px Georgia,Pretendard,serif}
-.wanted-seal{position:absolute;right:23px;bottom:18px;width:45px;height:45px;display:grid;place-items:center;border:3px double rgba(110,19,14,.72);border-radius:50%;color:rgba(110,19,14,.78);font:900 9px/1 Georgia,serif;transform:rotate(-13deg)}
+.wanted-portrait .portrait-halo{fill:none;stroke:rgba(20,91,87,.36);stroke-width:2;stroke-dasharray:5 7}
+.wanted-portrait .figure-head{fill:rgba(238,202,130,.48);stroke:#2a160d;stroke-width:7}
+.wanted-portrait .figure-neck,.wanted-portrait .figure-limb,.wanted-portrait .figure-cuff,.wanted-portrait .figure-lapel{fill:none;stroke:#2a160d;stroke-width:7;stroke-linecap:round;stroke-linejoin:round;filter:drop-shadow(1px 1px 0 rgba(255,230,168,.35))}
+.wanted-portrait .figure-suit{fill:rgba(26,30,31,.88);stroke:#2a160d;stroke-width:5;stroke-linejoin:round}
+.wanted-portrait .figure-lapel{stroke:#d7af59;stroke-width:3.2}
+.wanted-portrait .figure-tie{fill:#39b9ad;stroke:#23483f;stroke-width:2}
+.wanted-portrait .figure-cuff{stroke:#d7af59;stroke-width:4}
+.wanted-portrait .wanted-shadow{fill:none;stroke:#2a160d;stroke-width:3;stroke-linecap:round;opacity:.35}
+.wanted-portrait text{fill:#2a160d;font:900 18px Pretendard,sans-serif;text-anchor:middle;dominant-baseline:middle;letter-spacing:-1px}
+.wanted-paper h3{margin:0;font:900 21px/1.05 Georgia,Pretendard,serif;letter-spacing:1px}
+.wanted-id{margin:4px 0 0!important;color:#56331e!important;font:700 9px Georgia,Pretendard,serif!important}
+.wanted-bounty{display:flex;justify-content:center;align-items:baseline;gap:6px;margin-top:10px;padding-top:8px;border-top:1px solid rgba(67,31,11,.48)}
+.wanted-bounty span{font:900 8.5px Georgia,serif;letter-spacing:1.3px}
+.wanted-bounty strong{color:#35190b;font:900 17px Georgia,'Times New Roman',serif}
+.wanted-paper>small{display:block;margin-top:4px;color:#624029;font:700 8.5px Georgia,Pretendard,serif}
+.wanted-seal{position:absolute;right:18px;bottom:14px;width:38px;height:38px;display:grid;place-items:center;border:3px double rgba(22,99,94,.62);border-radius:50%;color:rgba(22,81,78,.85);font:900 8px/1 Georgia,serif;transform:rotate(-13deg)}
 
 /* 최근 벌점 */
 .feed{max-height:320px;overflow:auto;padding:7px}
@@ -251,14 +260,14 @@ aside label{display:block;margin:8px 0 6px;color:var(--muted);font-size:11px;fon
   .head{justify-content:space-between}
   .hero{margin-top:32px}
   .hero-logo{width:300px}
-  .top3{grid-template-columns:repeat(3,minmax(250px,310px));justify-content:start;gap:18px;margin-left:-14px;margin-right:-14px;padding:28px 22px 30px;overflow-x:auto;scroll-snap-type:x mandatory}
+  .top3{grid-template-columns:repeat(3,minmax(225px,270px));justify-content:start;gap:15px;margin-left:-14px;margin-right:-14px;padding:22px 22px 24px;overflow-x:auto;scroll-snap-type:x mandatory}
   .top-card{scroll-snap-align:center}
   .top-card.place-1{order:1;transform:none}
   .top-card.place-1:hover{transform:translateY(-6px)}
   .top-card.place-2{order:2;transform:none}
   .top-card.place-3{order:3;transform:none}
-  .wanted-paper{min-height:485px;padding:26px 24px 23px}
-  .wanted-portrait{height:205px}
+  .wanted-paper{min-height:405px;padding:20px 20px 18px}
+  .wanted-portrait{height:162px}
   .feed-item{grid-template-columns:1fr auto;gap:6px 10px}
   .feed-reason{grid-column:1/-1}
   .feed-item time{text-align:left}

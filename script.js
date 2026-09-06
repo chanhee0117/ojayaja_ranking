@@ -218,10 +218,16 @@ function renderTop3() {
           <div class="wanted-subtitle">정선's BLACKLIST</div>
           <div class="wanted-portrait" aria-hidden="true">
             <svg viewBox="0 0 240 210" role="img">
-              <circle cx="120" cy="58" r="39"></circle>
-              <path d="M120 97 L120 153 M120 113 L70 139 M120 113 L170 139 M120 153 L82 198 M120 153 L158 198"></path>
-              <path class="wanted-shadow" d="M80 202 Q120 187 160 202"></path>
-              <text x="120" y="59">${escapeHtml(faceName)}</text>
+              <circle class="portrait-halo" cx="120" cy="104" r="84"></circle>
+              <circle class="figure-head" cx="120" cy="51" r="31"></circle>
+              <path class="figure-neck" d="M109 81 L108 91 M131 81 L132 91"></path>
+              <path class="figure-suit" d="M106 88 L83 103 L91 153 L149 153 L157 103 L134 88 L120 116 Z"></path>
+              <path class="figure-lapel" d="M106 90 L120 116 L134 90 M120 116 L120 142"></path>
+              <path class="figure-limb" d="M85 105 L52 139 M155 105 L188 139 M105 152 L84 194 M135 152 L156 194"></path>
+              <path class="figure-cuff" d="M48 135 L58 144 M182 144 L192 135"></path>
+              <path class="figure-tie" d="M116 108 L120 103 L124 108 L122 129 L120 134 L118 129 Z"></path>
+              <path class="wanted-shadow" d="M72 199 Q120 185 168 199"></path>
+              <text x="120" y="52">${escapeHtml(faceName)}</text>
             </svg>
           </div>
           <h3>${escapeHtml(student.name)}</h3>
