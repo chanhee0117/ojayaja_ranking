@@ -180,6 +180,10 @@ function rankedStudents() {
   return [...students].sort((a, b) => b.hours - a.hours || a.studentId.localeCompare(b.studentId));
 }
 
+function blacklistedStudents() {
+  return [...students].sort((a, b) => b.penalty - a.penalty || b.hours - a.hours || a.studentId.localeCompare(b.studentId));
+}
+
 function penaltyRankedStudents() {
   return [...students].filter(student => student.penalty > 0).sort((a, b) => b.penalty - a.penalty || a.studentId.localeCompare(b.studentId));
 }
@@ -203,14 +207,14 @@ function classGroups() {
 }
 
 function renderTop3() {
-  $('#top3').innerHTML = rankedStudents().slice(0, 3).map((student, index) => `
+  $('#top3').innerHTML = blacklistedStudents().slice(0, 3).map((student, index) => `
     <article class="top-card place-${index + 1}">
       <i>${['♛', '♜', '♞'][index]}</i>
       <span class="top-place">TOP ${index + 1}</span>
       <h3>${escapeHtml(student.name)}</h3>
       <p>${student.studentId} · 2학년 ${student.class}반</p>
-      <strong>${student.hours.toFixed(1)}h</strong>
-      <small>벌점 ${formatPenalty(student.penalty)}점</small>
+      <strong>${formatPenalty(student.penalty)}점</strong>
+      <small>자습 ${student.hours.toFixed(1)}h</small>
     </article>`).join('');
 }
 
