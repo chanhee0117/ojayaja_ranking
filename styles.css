@@ -118,15 +118,20 @@ tbody tr:hover{background:rgba(63,217,199,.045)}
 .wanted-portrait::before{top:7px;left:7px;border-top:2px solid rgba(22,99,94,.58);border-left:2px solid rgba(22,99,94,.58)}
 .wanted-portrait::after{right:7px;bottom:7px;border-right:2px solid rgba(145,101,21,.62);border-bottom:2px solid rgba(145,101,21,.62)}
 .wanted-portrait svg{width:100%;height:100%;overflow:visible}
-.wanted-portrait .portrait-halo{fill:none;stroke:rgba(20,91,87,.36);stroke-width:2;stroke-dasharray:5 7}
-.wanted-portrait .figure-head{fill:rgba(238,202,130,.48);stroke:#2a160d;stroke-width:7}
-.wanted-portrait .figure-neck,.wanted-portrait .figure-limb,.wanted-portrait .figure-cuff,.wanted-portrait .figure-lapel{fill:none;stroke:#2a160d;stroke-width:7;stroke-linecap:round;stroke-linejoin:round;filter:drop-shadow(1px 1px 0 rgba(255,230,168,.35))}
-.wanted-portrait .figure-suit{fill:rgba(26,30,31,.88);stroke:#2a160d;stroke-width:5;stroke-linejoin:round}
-.wanted-portrait .figure-lapel{stroke:#d7af59;stroke-width:3.2}
-.wanted-portrait .figure-tie{fill:#39b9ad;stroke:#23483f;stroke-width:2}
-.wanted-portrait .figure-cuff{stroke:#d7af59;stroke-width:4}
+.wanted-portrait .portrait-halo{fill:rgba(18,83,80,.045);stroke:rgba(20,91,87,.34);stroke-width:2;stroke-dasharray:5 7}
+.wanted-portrait .uniform-neck{fill:#d9a875;stroke:#2a160d;stroke-width:3}
+.wanted-portrait .uniform-shirt{fill:#eee6d4;stroke:#2a160d;stroke-width:3;stroke-linejoin:round}
+.wanted-portrait .uniform-arm,.wanted-portrait .uniform-jacket{fill:#172630;stroke:#29180f;stroke-width:4;stroke-linejoin:round;filter:drop-shadow(1px 2px 0 rgba(255,230,168,.25))}
+.wanted-portrait .uniform-lapel{fill:none;stroke:#d0aa5c;stroke-width:3.2;stroke-linecap:round;stroke-linejoin:round}
+.wanted-portrait .uniform-tie{fill:#258f8a;stroke:#183c3b;stroke-width:2}
+.wanted-portrait .uniform-detail{fill:none;stroke:rgba(224,201,147,.5);stroke-width:2;stroke-linecap:round}
+.wanted-portrait .uniform-button{fill:#d0aa5c;stroke:#56361c;stroke-width:1}
+.wanted-portrait .uniform-cuff{fill:none;stroke:#d0aa5c;stroke-width:4;stroke-linecap:round}
+.wanted-portrait .uniform-hand{fill:#d9a875;stroke:#2a160d;stroke-width:3}
+.wanted-portrait .emblem-frame{fill:#10232c;stroke:#d0aa5c;stroke-width:4;filter:drop-shadow(0 3px 4px rgba(27,12,5,.48))}
+.wanted-portrait .school-emblem{clip-path:circle(48.5% at 50% 50%)}
+.wanted-portrait .emblem-ring{fill:none;stroke:#2a160d;stroke-width:2.5}
 .wanted-portrait .wanted-shadow{fill:none;stroke:#2a160d;stroke-width:3;stroke-linecap:round;opacity:.35}
-.wanted-portrait text{fill:#2a160d;font:900 18px Pretendard,sans-serif;text-anchor:middle;dominant-baseline:middle;letter-spacing:-1px}
 .wanted-paper h3{margin:0;font:900 21px/1.05 Georgia,Pretendard,serif;letter-spacing:1px}
 .wanted-id{margin:4px 0 0!important;color:#56331e!important;font:700 9px Georgia,Pretendard,serif!important}
 .wanted-bounty{display:flex;justify-content:center;align-items:baseline;gap:6px;margin-top:10px;padding-top:8px;border-top:1px solid rgba(67,31,11,.48)}

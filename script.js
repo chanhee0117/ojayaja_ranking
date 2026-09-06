@@ -208,7 +208,7 @@ function classGroups() {
 
 function renderTop3() {
   $('#top3').innerHTML = blacklistedStudents().slice(0, 3).map((student, index) => {
-    const faceName = Array.from(student.name).slice(-2).join('');
+    const faceClipId = `school-emblem-face-${index + 1}`;
     return `
       <article class="top-card wanted-card place-${index + 1}" aria-label="블랙리스트 ${index + 1}위 ${escapeHtml(student.name)}">
         <div class="wanted-paper">
@@ -218,16 +218,27 @@ function renderTop3() {
           <div class="wanted-subtitle">정선's BLACKLIST</div>
           <div class="wanted-portrait" aria-hidden="true">
             <svg viewBox="0 0 240 210" role="img">
-              <circle class="portrait-halo" cx="120" cy="104" r="84"></circle>
-              <circle class="figure-head" cx="120" cy="51" r="31"></circle>
-              <path class="figure-neck" d="M109 81 L108 91 M131 81 L132 91"></path>
-              <path class="figure-suit" d="M106 88 L83 103 L91 153 L149 153 L157 103 L134 88 L120 116 Z"></path>
-              <path class="figure-lapel" d="M106 90 L120 116 L134 90 M120 116 L120 142"></path>
-              <path class="figure-limb" d="M85 105 L52 139 M155 105 L188 139 M105 152 L84 194 M135 152 L156 194"></path>
-              <path class="figure-cuff" d="M48 135 L58 144 M182 144 L192 135"></path>
-              <path class="figure-tie" d="M116 108 L120 103 L124 108 L122 129 L120 134 L118 129 Z"></path>
-              <path class="wanted-shadow" d="M72 199 Q120 185 168 199"></path>
-              <text x="120" y="52">${escapeHtml(faceName)}</text>
+              <defs>
+                <clipPath id="${faceClipId}"><circle cx="120" cy="52" r="33"></circle></clipPath>
+              </defs>
+              <ellipse class="portrait-halo" cx="120" cy="116" rx="88" ry="91"></ellipse>
+              <path class="uniform-neck" d="M106 75 L106 91 Q120 100 134 91 L134 75 Z"></path>
+              <path class="uniform-shirt" d="M104 82 L120 111 L136 82 L128 76 L112 76 Z"></path>
+              <path class="uniform-arm uniform-arm-left" d="M82 97 C67 101 57 111 49 124 L36 146 Q34 152 40 156 L50 163 Q56 166 60 160 L77 139 Q84 129 91 119 Z"></path>
+              <path class="uniform-arm uniform-arm-right" d="M158 97 C173 101 183 111 191 124 L204 146 Q206 152 200 156 L190 163 Q184 166 180 160 L163 139 Q156 129 149 119 Z"></path>
+              <path class="uniform-jacket" d="M104 82 C91 85 80 91 75 102 Q69 118 72 142 L76 182 Q98 190 120 190 Q142 190 164 182 L168 142 Q171 118 165 102 C160 91 149 85 136 82 L120 112 Z"></path>
+              <path class="uniform-lapel" d="M103 84 L120 112 L98 103 L91 88 M137 84 L120 112 L142 103 L149 88"></path>
+              <path class="uniform-tie" d="M115 101 L120 95 L125 101 L123 128 L120 138 L117 128 Z"></path>
+              <path class="uniform-detail" d="M120 113 L120 180 M91 146 L106 149 M149 146 L134 149"></path>
+              <circle class="uniform-button" cx="120" cy="145" r="2.5"></circle>
+              <circle class="uniform-button" cx="120" cy="160" r="2.5"></circle>
+              <path class="uniform-cuff" d="M39 146 L57 159 M201 146 L183 159"></path>
+              <circle class="uniform-hand" cx="43" cy="157" r="8"></circle>
+              <circle class="uniform-hand" cx="197" cy="157" r="8"></circle>
+              <circle class="emblem-frame" cx="120" cy="52" r="36"></circle>
+              <image class="school-emblem" href="daejin-school-emblem.png?v=1" x="86" y="18" width="68" height="68" preserveAspectRatio="xMidYMid slice" clip-path="url(#${faceClipId})"></image>
+              <circle class="emblem-ring" cx="120" cy="52" r="33"></circle>
+              <path class="wanted-shadow" d="M65 196 Q120 183 175 196"></path>
             </svg>
           </div>
           <h3>${escapeHtml(student.name)}</h3>
