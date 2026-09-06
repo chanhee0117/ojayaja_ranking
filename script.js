@@ -207,15 +207,31 @@ function classGroups() {
 }
 
 function renderTop3() {
-  $('#top3').innerHTML = blacklistedStudents().slice(0, 3).map((student, index) => `
-    <article class="top-card place-${index + 1}">
-      <i>${['♛', '♜', '♞'][index]}</i>
-      <span class="top-place">TOP ${index + 1}</span>
-      <h3>${escapeHtml(student.name)}</h3>
-      <p>${student.studentId} · 2학년 ${student.class}반</p>
-      <strong>${formatPenalty(student.penalty)}점</strong>
-      <small>자습 ${student.hours.toFixed(1)}h</small>
-    </article>`).join('');
+  $('#top3').innerHTML = blacklistedStudents().slice(0, 3).map((student, index) => {
+    const faceName = Array.from(student.name).slice(-2).join('');
+    return `
+      <article class="top-card wanted-card place-${index + 1}" aria-label="블랙리스트 ${index + 1}위 ${escapeHtml(student.name)}">
+        <div class="wanted-paper">
+          <div class="wanted-rank"><span>NO. ${index + 1}</span><b>${['GOLD', 'SILVER', 'BRONZE'][index]}</b></div>
+          <p class="wanted-kicker">DAEJIN DISCIPLINE BOARD</p>
+          <div class="wanted-title">WANTED</div>
+          <div class="wanted-subtitle">정선's BLACKLIST</div>
+          <div class="wanted-portrait" aria-hidden="true">
+            <svg viewBox="0 0 240 210" role="img">
+              <circle cx="120" cy="58" r="39"></circle>
+              <path d="M120 97 L120 153 M120 113 L70 139 M120 113 L170 139 M120 153 L82 198 M120 153 L158 198"></path>
+              <path class="wanted-shadow" d="M80 202 Q120 187 160 202"></path>
+              <text x="120" y="59">${escapeHtml(faceName)}</text>
+            </svg>
+          </div>
+          <h3>${escapeHtml(student.name)}</h3>
+          <p class="wanted-id">${student.studentId} · 2학년 ${student.class}반</p>
+          <div class="wanted-bounty"><span>BOUNTY</span><strong>${formatPenalty(student.penalty)} POINT</strong></div>
+          <small>자습 ${student.hours.toFixed(1)}h</small>
+          <div class="wanted-seal">TOP<br>${index + 1}</div>
+        </div>
+      </article>`;
+  }).join('');
 }
 
 function renderRanking() {
