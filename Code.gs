@@ -14,8 +14,9 @@ const SETTINGS = Object.freeze({
   SHEET_GID: 1239065071,
   AUTHORIZED_EDITOR: '202620626@dj.hs.kr',
   API_VERSION: 'v44-secure-pwa',
-  VIEWER_PASSWORD_PROPERTY: 'VIEWER_PASSWORD',
   ADMIN_PASSWORD_PROPERTY: 'ADMIN_PASSWORD',
+  // 시범 운영: 2학년 6반만 공개. 정식 운영 때 []로 바꾸면 전 학급이 표시됩니다.
+  VISIBLE_CLASSES: [6],
   PENALTY_HEADER_ROW: 1,
   DATA_START_ROW: 2,
   CLASS_COLUMN: 1,
@@ -48,7 +49,6 @@ function doPost(event) {
     const parameters = event && event.parameter ? event.parameter : {};
     if (parameters.apiVersion !== SETTINGS.API_VERSION) throw new Error('사이트와 Apps Script 버전이 일치하지 않습니다.');
     if (parameters.action === 'read') {
-      requireViewerPassword_(parameters.accessPassword);
       const sheet = penaltySheet_();
       return jsonResponse_({
         apiVersion: SETTINGS.API_VERSION,
@@ -56,7 +56,9 @@ function doPost(event) {
         sheetName: sheet.getName(),
         sheetGid: sheet.getSheetId(),
         students: readStudents_(sheet),
-        recentPenalties: readRecentPenalties_()
+        recentPenalties: readRecentPenalties_().filter(function(record) {
+          return isVisibleStudentId_(record && record.studentId);
+        })
       });
     }
     requireAdminPassword_(parameters.adminPassword);
@@ -80,6 +82,7 @@ function doPost(event) {
     const addedPenalty = roundPenalty_(Math.max(0, Number(parameters.addedPenalty) || 0));
     const reason = String(parameters.reason || '벌점 부여').trim().slice(0, 300);
     if (!/^2\d{4}$/.test(studentId)) throw new Error('올바른 5자리 학번이 아닙니다.');
+    if (!isVisibleStudentId_(studentId)) throw new Error('현재 시범 운영 대상 학급의 학생이 아닙니다.');
     if (!Number.isFinite(penalty) || penalty < 0) throw new Error('벌점은 0 이상의 숫자여야 합니다.');
 
     const lock = LockService.getScriptLock();
@@ -95,18 +98,6 @@ function doPost(event) {
     }
   } catch (error) {
     return jsonResponse_({ apiVersion: SETTINGS.API_VERSION, ok: false, message: error.message });
-  }
-}
-
-function requireViewerPassword_(candidate) {
-  const properties = PropertiesService.getScriptProperties();
-  const viewerPassword = properties.getProperty(SETTINGS.VIEWER_PASSWORD_PROPERTY);
-  const adminPassword = properties.getProperty(SETTINGS.ADMIN_PASSWORD_PROPERTY);
-  if (!viewerPassword || !adminPassword) {
-    throw new Error('Apps Script 속성에 VIEWER_PASSWORD와 ADMIN_PASSWORD를 먼저 설정해 주세요.');
-  }
-  if (!safeEquals_(candidate, viewerPassword) && !safeEquals_(candidate, adminPassword)) {
-    throw new Error('접속 비밀번호가 올바르지 않습니다.');
   }
 }
 
@@ -181,7 +172,18 @@ function readStudents_(targetSheet) {
         penalty: parsePenaltyValue_(row[SETTINGS.PENALTY_COLUMN - 1])
       };
     })
-    .filter(function(student) { return student !== null; });
+    .filter(function(student) {
+      return student !== null && isVisibleClass_(student.class);
+    });
+}
+
+function isVisibleClass_(classNumber) {
+  return !SETTINGS.VISIBLE_CLASSES.length || SETTINGS.VISIBLE_CLASSES.indexOf(Number(classNumber)) !== -1;
+}
+
+function isVisibleStudentId_(studentId) {
+  const match = String(studentId || '').match(/^2(\d{2})\d{2}$/);
+  return Boolean(match) && isVisibleClass_(Number(match[1]));
 }
 
 function setPenalty_(studentId, penalty) {
