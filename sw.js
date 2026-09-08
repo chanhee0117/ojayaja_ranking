@@ -1,17 +1,14 @@
-const CACHE_NAME = 'daejin-self-study-v50';
+const CACHE_NAME = 'daejin-self-study-v60';
 const APP_SHELL = [
   './',
   './index.html',
-  './styles.css?v=50',
+  './styles.css?v=60',
   './config.js?v=46',
-  './script.js?v=50',
+  './script.js?v=60',
   './manifest.webmanifest',
   './icon-192.png',
   './icon-512.png',
-  './apple-touch-icon.png',
-  './leagueof-hd.jpg',
-  './parchment-wanted.jpg',
-  './Gemini_Generated_Image_o31s7eo31s7eo31s-Photoroom.png'
+  './apple-touch-icon.png'
 ];
 
 self.addEventListener('install', event => {

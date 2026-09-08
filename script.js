@@ -207,48 +207,29 @@ function classGroups() {
 }
 
 function renderTop3() {
-  $('#top3').innerHTML = blacklistedStudents().slice(0, 3).map((student, index) => {
-    const faceClipId = `school-emblem-face-${index + 1}`;
-    return `
-      <article class="top-card wanted-card place-${index + 1}" aria-label="블랙리스트 ${index + 1}위 ${escapeHtml(student.name)}">
-        <div class="wanted-paper">
-          <div class="wanted-rank"><span>NO. ${index + 1}</span><b>${['GOLD', 'SILVER', 'BRONZE'][index]}</b></div>
-          <p class="wanted-kicker">DAEJIN DISCIPLINE BOARD</p>
-          <div class="wanted-title">WANTED</div>
-          <div class="wanted-subtitle">정선's BLACKLIST</div>
-          <div class="wanted-portrait" aria-hidden="true">
-            <svg viewBox="0 0 240 210" role="img">
-              <defs>
-                <clipPath id="${faceClipId}"><circle cx="120" cy="52" r="33"></circle></clipPath>
-              </defs>
-              <ellipse class="portrait-halo" cx="120" cy="116" rx="88" ry="91"></ellipse>
-              <path class="uniform-neck" d="M106 75 L106 91 Q120 100 134 91 L134 75 Z"></path>
-              <path class="uniform-shirt" d="M104 82 L120 111 L136 82 L128 76 L112 76 Z"></path>
-              <path class="uniform-arm uniform-arm-left" d="M82 97 C67 101 57 111 49 124 L36 146 Q34 152 40 156 L50 163 Q56 166 60 160 L77 139 Q84 129 91 119 Z"></path>
-              <path class="uniform-arm uniform-arm-right" d="M158 97 C173 101 183 111 191 124 L204 146 Q206 152 200 156 L190 163 Q184 166 180 160 L163 139 Q156 129 149 119 Z"></path>
-              <path class="uniform-jacket" d="M104 82 C91 85 80 91 75 102 Q69 118 72 142 L76 182 Q98 190 120 190 Q142 190 164 182 L168 142 Q171 118 165 102 C160 91 149 85 136 82 L120 112 Z"></path>
-              <path class="uniform-lapel" d="M103 84 L120 112 L98 103 L91 88 M137 84 L120 112 L142 103 L149 88"></path>
-              <path class="uniform-tie" d="M115 101 L120 95 L125 101 L123 128 L120 138 L117 128 Z"></path>
-              <path class="uniform-detail" d="M120 113 L120 180 M91 146 L106 149 M149 146 L134 149"></path>
-              <circle class="uniform-button" cx="120" cy="145" r="2.5"></circle>
-              <circle class="uniform-button" cx="120" cy="160" r="2.5"></circle>
-              <path class="uniform-cuff" d="M39 146 L57 159 M201 146 L183 159"></path>
-              <circle class="uniform-hand" cx="43" cy="157" r="8"></circle>
-              <circle class="uniform-hand" cx="197" cy="157" r="8"></circle>
-              <circle class="emblem-frame" cx="120" cy="52" r="36"></circle>
-              <image class="school-emblem" href="daejin-school-emblem.png?v=1" x="86" y="18" width="68" height="68" preserveAspectRatio="xMidYMid slice" clip-path="url(#${faceClipId})"></image>
-              <circle class="emblem-ring" cx="120" cy="52" r="33"></circle>
-              <path class="wanted-shadow" d="M65 196 Q120 183 175 196"></path>
-            </svg>
-          </div>
-          <h3>${escapeHtml(student.name)}</h3>
-          <p class="wanted-id">${student.studentId} · 2학년 ${student.class}반</p>
-          <div class="wanted-bounty"><span>BOUNTY</span><strong>${formatPenalty(student.penalty)} POINT</strong></div>
-          <small>자습 ${student.hours.toFixed(1)}h</small>
-          <div class="wanted-seal">TOP<br>${index + 1}</div>
+  $('#top3').innerHTML = blacklistedStudents().slice(0, 3).map((student, index) => `
+    <article class="top-card place-${index + 1}" aria-label="벌점왕 ${index + 1}위 ${escapeHtml(student.name)}">
+      <div class="podium-card">
+        <div class="podium-head">
+          <span class="podium-rank">${index + 1}</span>
+          <span class="podium-badge">벌점왕 ${index + 1}위</span>
         </div>
-      </article>`;
-  }).join('');
+        <h3>${escapeHtml(student.name)}</h3>
+        <p class="podium-id">${student.studentId} · 2학년 ${student.class}반</p>
+        <div class="podium-score"><strong>${formatPenalty(student.penalty)}점</strong><span>누적 벌점</span></div>
+        <div class="podium-meta">자습 ${student.hours.toFixed(1)}시간</div>
+      </div>
+    </article>`).join('');
+}
+
+function renderSummary() {
+  const totalHours = students.reduce((sum, student) => sum + student.hours, 0);
+  const cleanStudents = students.filter(student => student.penalty === 0).length;
+  const classes = new Set(students.map(student => student.class)).size;
+  $('#summaryStudents').textContent = `${students.length}명`;
+  $('#summaryHours').textContent = `${totalHours.toFixed(1)}h`;
+  $('#summaryClean').textContent = `${cleanStudents}명`;
+  $('#summaryClasses').textContent = `${classes}개 반`;
 }
 
 function renderRanking() {
@@ -357,6 +338,7 @@ function showClass(classNumber) {
 }
 
 function render() {
+  renderSummary();
   renderTop3();
   renderRanking();
   renderPenaltyFeed();
