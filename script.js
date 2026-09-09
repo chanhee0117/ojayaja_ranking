@@ -214,13 +214,11 @@ function renderTop3() {
         <div class="clipboard-paper">
           <div class="podium-head">
             <span class="podium-rank">${String(index + 1).padStart(2, '0')}</span>
-            <span class="podium-badge">특별관리 ${index + 1}위</span>
           </div>
-          <p class="paper-note">지도 기록</p>
           <h3>${escapeHtml(student.name)}</h3>
           <p class="podium-id">${student.studentId} · 2학년 ${student.class}반</p>
           <div class="podium-score"><span>누적 벌점</span><strong>${formatPenalty(student.penalty)}점</strong></div>
-          <div class="podium-meta"><span>SELF-STUDY RECORD</span><b>${student.hours.toFixed(1)}시간</b></div>
+          <div class="podium-meta"><b>${student.hours.toFixed(1)}시간</b></div>
         </div>
       </div>
     </article>`).join('');

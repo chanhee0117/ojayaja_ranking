@@ -1,15 +1,16 @@
-const CACHE_NAME = 'daejin-self-study-v71';
+const CACHE_NAME = 'daejin-self-study-v72';
 const APP_SHELL = [
   './',
   './index.html',
-  './styles.css?v=71',
+  './styles.css?v=72',
   './config.js?v=46',
-  './script.js?v=71',
+  './script.js?v=72',
   './manifest.webmanifest',
   './icon-192.png',
   './icon-512.png',
   './apple-touch-icon.png',
   './clipboard-clip-v1.png',
+  './chalkboard-surface-v1.png',
   './KCCKimhoon.woff2'
 ];
 
