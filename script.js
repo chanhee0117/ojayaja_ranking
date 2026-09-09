@@ -208,11 +208,11 @@ function classGroups() {
 
 function renderTop3() {
   $('#top3').innerHTML = blacklistedStudents().slice(0, 3).map((student, index) => `
-    <article class="top-card place-${index + 1}" aria-label="벌점왕 ${index + 1}위 ${escapeHtml(student.name)}">
+    <article class="top-card place-${index + 1}" aria-label="블랙리스트 ${index + 1}위 ${escapeHtml(student.name)}">
       <div class="podium-card">
         <div class="podium-head">
           <span class="podium-rank">${index + 1}</span>
-          <span class="podium-badge">벌점왕 ${index + 1}위</span>
+          <span class="podium-badge">블랙리스트 ${index + 1}위</span>
         </div>
         <h3>${escapeHtml(student.name)}</h3>
         <p class="podium-id">${student.studentId} · 2학년 ${student.class}반</p>

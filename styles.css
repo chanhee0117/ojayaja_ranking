@@ -32,7 +32,7 @@ header{position:sticky;top:0;z-index:50;border-bottom:1px solid rgba(226,233,229
 .head,main,footer{width:min(1180px,calc(100% - 40px));margin-inline:auto}
 .head{min-height:72px;display:flex;align-items:center;gap:28px}
 .logo{display:inline-flex;align-items:center;gap:11px;flex:none;color:var(--text);text-decoration:none}
-.logo>span{width:38px;height:38px;display:grid;place-items:center;border-radius:12px;background:var(--green);color:#fff;font-size:21px;font-weight:900;box-shadow:0 7px 18px rgba(40,122,85,.22)}
+.logo>img{width:42px;height:42px;display:block;object-fit:cover;border:1px solid #d9e1dc;border-radius:50%;background:#fff;box-shadow:0 7px 18px rgba(40,122,85,.14)}
 .logo>b{display:flex;flex-direction:column;font-size:15px;line-height:1.16;letter-spacing:-.25px}
 .logo small{margin-top:3px;color:var(--muted);font-size:10px;font-weight:600;letter-spacing:0}
 nav{display:flex;align-items:center;gap:6px;min-width:0;margin-left:auto}
@@ -75,7 +75,7 @@ input,select{width:100%;min-height:42px;padding:10px 12px;border:1px solid #d8e1
 input:focus,select:focus{outline:none;border-color:var(--green);box-shadow:0 0 0 3px rgba(40,122,85,.12)}
 input[type="checkbox"]{width:17px;min-height:17px;height:17px;padding:0;accent-color:var(--green)}
 
-/* 벌점왕 TOP 3 */
+/* 블랙리스트 TOP 3 */
 .top-section{padding:31px 34px 34px;border:1px solid var(--line);border-radius:24px;background:var(--surface)}
 .top3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));align-items:end;gap:14px;margin-top:24px}
 .top-card{min-width:0;order:initial}
