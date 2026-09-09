@@ -8,6 +8,8 @@
   --green:#174c3c;
   --green-deep:#0d3028;
   --green-soft:#e9f1ed;
+  --school-green:#4e9b46;
+  --school-green-deep:#2f6f34;
   --gold:#bd9453;
   --gold-light:#e5cf9c;
   --red:#b94d4b;
@@ -55,20 +57,20 @@ h2{margin:0;color:var(--ink);font-size:25px;line-height:1.3;letter-spacing:-.7px
 .eyebrow{margin:0 0 7px;color:var(--gold);font-size:10px;font-weight:800;letter-spacing:1.8px}
 
 /* Grand academic banner */
-.overview{position:relative;isolation:isolate;display:grid;grid-template-columns:minmax(0,1.03fr) minmax(480px,.97fr);align-items:center;gap:44px;margin-top:32px;padding:49px 50px;overflow:hidden;border:1px solid rgba(79,83,81,.18);border-radius:24px;background:linear-gradient(128deg,rgba(255,255,255,.88),rgba(247,247,244,.68) 55%,rgba(235,235,231,.78));box-shadow:0 24px 58px rgba(35,39,37,.12),inset 0 1px rgba(255,255,255,.92);color:#171b19;backdrop-filter:blur(14px)}
-.overview::before{content:'';position:absolute;inset:0;z-index:-1;background:linear-gradient(110deg,rgba(255,255,255,.54),transparent 31%,transparent 69%,rgba(137,113,77,.06)),repeating-linear-gradient(90deg,transparent 0,transparent 79px,rgba(52,55,53,.025) 80px);pointer-events:none}
-.overview::after{content:'';position:absolute;right:13%;top:50%;width:470px;aspect-ratio:1;z-index:-1;transform:translateY(-50%) rotate(-4deg);background:url('daejin-school-emblem.png') center/contain no-repeat;opacity:.065;filter:grayscale(1) contrast(1.2);mix-blend-mode:multiply;pointer-events:none}
+.overview{position:relative;isolation:isolate;display:grid;grid-template-columns:minmax(0,1.03fr) minmax(480px,.97fr);align-items:center;gap:44px;margin-top:32px;padding:49px 50px;overflow:hidden;border:1px solid rgba(78,155,70,.22);border-radius:24px;background:linear-gradient(128deg,rgba(255,255,255,.9),rgba(248,250,247,.72) 55%,rgba(235,243,233,.8));box-shadow:0 24px 58px rgba(35,58,38,.11),inset 0 1px rgba(255,255,255,.94);color:#171b19;backdrop-filter:blur(14px)}
+.overview::before{content:'';position:absolute;inset:0;z-index:-1;background:linear-gradient(110deg,rgba(255,255,255,.58),transparent 31%,transparent 69%,rgba(78,155,70,.07)),repeating-linear-gradient(90deg,transparent 0,transparent 79px,rgba(78,155,70,.035) 80px);pointer-events:none}
+.overview::after{content:'';position:absolute;right:13%;top:50%;width:470px;aspect-ratio:1;z-index:-1;transform:translateY(-50%) rotate(-4deg);background:url('daejin-school-emblem.png') center/contain no-repeat;opacity:.075;mix-blend-mode:multiply;pointer-events:none}
 .overview-copy{position:relative;padding-left:23px}
-.overview-copy::before{content:'';position:absolute;left:0;top:3px;bottom:3px;width:2px;background:linear-gradient(180deg,#a78a61,rgba(167,138,97,.1))}
-.overview .eyebrow{color:#765f3e;font-size:11px;letter-spacing:2.4px}
+.overview-copy::before{content:'';position:absolute;left:0;top:3px;bottom:3px;width:2px;background:linear-gradient(180deg,var(--school-green),rgba(78,155,70,.12));box-shadow:0 0 16px rgba(78,155,70,.13)}
+.overview .eyebrow{color:var(--school-green-deep);font-size:11px;letter-spacing:2.4px}
 .overview h1{margin:0;color:#171b19;font-size:clamp(40px,5vw,64px);font-weight:900;line-height:1.16;letter-spacing:-3px;text-shadow:0 1px rgba(255,255,255,.92),0 10px 26px rgba(29,31,30,.1)}
-.overview h1 em{color:#816840;font-style:normal}
+.overview h1 em{color:var(--school-green);font-style:normal;text-shadow:0 1px rgba(255,255,255,.92),0 10px 25px rgba(52,111,52,.14)}
 .summary-grid{position:relative;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:11px}
-.summary-grid article{min-height:108px;padding:20px;border:1px solid rgba(63,67,65,.14);border-radius:13px;background:rgba(255,255,255,.56);box-shadow:inset 0 1px rgba(255,255,255,.88),0 7px 20px rgba(42,45,43,.045);backdrop-filter:blur(11px)}
-.summary-grid article:first-child{border-color:rgba(139,111,69,.3);background:rgba(249,246,239,.68)}
-.summary-grid span{display:block;color:#707773;font-size:11px;font-weight:650}
+.summary-grid article{min-height:108px;padding:20px;border:1px solid rgba(78,155,70,.18);border-radius:13px;background:rgba(255,255,255,.58);box-shadow:inset 0 1px rgba(255,255,255,.9),0 7px 20px rgba(39,76,41,.045);backdrop-filter:blur(11px)}
+.summary-grid article:first-child{border-color:rgba(78,155,70,.38);background:rgba(238,247,236,.72)}
+.summary-grid span{display:block;color:#557058;font-size:11px;font-weight:650}
 .summary-grid strong{display:block;margin-top:12px;color:#171b19;font-family:var(--serif);font-size:25px;line-height:1;letter-spacing:-.7px}
-.summary-grid article:first-child strong{color:#775e39}
+.summary-grid article:first-child strong{color:var(--school-green-deep)}
 
 /* Shared surfaces */
 .panel,.top-section{border:1px solid var(--line);border-radius:var(--radius);background:rgba(255,254,250,.95);box-shadow:0 10px 32px rgba(40,51,45,.06)}
