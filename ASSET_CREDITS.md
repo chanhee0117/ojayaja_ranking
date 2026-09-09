@@ -4,3 +4,4 @@
 - `KCCKimhoon.woff2`: **KCC 김훈체**, provided by the Korea Copyright Commission under the SIL Open Font License. [Official source](https://gongu.copyright.or.kr/gongu/wrt/wrt/view.do?menuNo=200023&wrtSn=13072021)
 - `clipboard-clip-v1.png`: original transparent clipboard-hardware asset generated for this project with OpenAI image generation. Prompt summary: a front-facing, photorealistic brushed-steel clipboard clip with restrained champagne-gold details, isolated on a transparent background, without text or branding.
 - `chalkboard-surface-v1.png`: original dark forest-green classroom chalkboard texture generated for this project with OpenAI image generation. It contains no text, doodles, people, logos, or watermarks.
+- `deathnote-board-v1.png`: original near-black slate and aged-ledger texture generated for the `박진경 데스노트` section with OpenAI image generation. It uses restrained oxblood accents and contains no copied franchise art, characters, logos, or text.
