@@ -43,7 +43,7 @@ nav a:hover{background:var(--green-soft);color:var(--green-dark)}
 main{padding-bottom:90px}
 section{margin-top:64px;scroll-margin-top:94px}
 .overview{margin-top:32px;display:grid;grid-template-columns:minmax(0,1.05fr) minmax(480px,.95fr);align-items:center;gap:42px;padding:46px 48px;border:1px solid var(--line);border-radius:26px;background:var(--surface);box-shadow:var(--shadow);overflow:hidden;position:relative}
-.overview::after{content:"";position:absolute;right:-55px;top:-95px;width:260px;height:260px;border:52px solid var(--green-soft);border-radius:50%;opacity:.75;pointer-events:none}
+.overview::after{content:"";position:absolute;right:-34px;top:50%;width:470px;aspect-ratio:1;transform:translateY(-50%) rotate(-5deg);background:url('daejin-school-emblem.png') center/contain no-repeat;opacity:.065;filter:saturate(.8);mix-blend-mode:multiply;pointer-events:none}
 .overview-copy{position:relative;z-index:1}
 .eyebrow,.section-kicker{margin:0 0 10px;color:var(--green);font-size:11px;font-weight:850;letter-spacing:1.4px}
 h1{margin:0;font-size:clamp(34px,4.2vw,54px);line-height:1.13;letter-spacing:-2.4px}
@@ -246,7 +246,7 @@ aside label{display:block;margin:8px 0 6px;color:var(--muted);font-size:11px;fon
 }
 
 @media(max-width:760px){
-  .head,main,footer{width:min(100% - 28px,1180px)}section{margin-top:46px}.overview{margin-top:18px;padding:28px 22px;border-radius:20px;gap:26px}.overview::after{opacity:.45}h1{font-size:36px;letter-spacing:-1.7px}.summary-grid{grid-template-columns:repeat(2,1fr)}
+  .head,main,footer{width:min(100% - 28px,1180px)}section{margin-top:46px}.overview{margin-top:18px;padding:28px 22px;border-radius:20px;gap:26px}.overview::after{right:-72px;top:64%;width:330px;opacity:.055}h1{font-size:36px;letter-spacing:-1.7px}.summary-grid{grid-template-columns:repeat(2,1fr)}
   .top-section{padding:24px 18px}.section-heading,.title{align-items:flex-start}.section-heading>p{display:none}.top3{grid-template-columns:1fr;gap:10px}.top-card.place-1,.top-card.place-2,.top-card.place-3{order:initial}.place-1 .podium-card,.podium-card{min-height:0;padding:18px}.podium-card h3{margin-top:18px}.podium-score{margin-top:18px}.podium-card::after{width:90px;height:90px}
   .feed-item{grid-template-columns:1fr auto}.feed-reason{grid-column:1}.feed-item time{grid-column:2;grid-row:2}.race-row{grid-template-columns:34px 1fr auto;padding:13px}.race-track{grid-column:2/4}.race-score{grid-column:2}.race-gap{grid-column:3}.clean-list{grid-template-columns:1fr}.penalty-guide{grid-template-columns:1fr}.guide-card:last-child{grid-column:auto}.student-result{grid-template-columns:repeat(2,1fr)}
   .penalty-rule{grid-template-columns:1fr 54px}.stepper{grid-column:1/-1}.penalty-summary{grid-template-columns:1fr}.policy-page{margin:20px 14px;padding:24px}
