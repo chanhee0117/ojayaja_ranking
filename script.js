@@ -184,6 +184,41 @@ function blacklistedStudents() {
   return [...students].sort((a, b) => b.penalty - a.penalty || b.hours - a.hours || a.studentId.localeCompare(b.studentId));
 }
 
+function penaltyHistoryFor(studentId) {
+  const counts = new Map();
+  recentPenalties
+    .filter(record => String(record.studentId || '') === String(studentId))
+    .forEach(record => {
+      String(record.reason || '')
+        .split(/\s*[·•,]\s*/)
+        .map(part => part.trim())
+        .filter(Boolean)
+        .forEach(part => {
+          const match = part.match(/^(.*?)\s+(\d+)회$/);
+          const label = (match ? match[1] : part).trim() || '벌점 부여';
+          const count = match ? Number(match[2]) : 1;
+          counts.set(label, (counts.get(label) || 0) + count);
+        });
+    });
+
+  return [...counts.entries()]
+    .map(([label, count]) => ({ label, count }))
+    .sort((a, b) => b.count - a.count || a.label.localeCompare(b.label, 'ko'));
+}
+
+function penaltyHistoryMarkup(studentId) {
+  const history = penaltyHistoryFor(studentId);
+  const visibleHistory = history.slice(0, 3);
+  const remaining = history.length - visibleHistory.length;
+  if (!visibleHistory.length) return '<p class="note-history-empty">세부 기록 없음</p>';
+
+  return `
+    <ul class="note-history-list">
+      ${visibleHistory.map(item => `<li><span>${escapeHtml(item.label)}</span><b>${item.count}회</b></li>`).join('')}
+    </ul>
+    ${remaining > 0 ? `<p class="note-history-more">외 ${remaining}개 항목</p>` : ''}`;
+}
+
 function penaltyRankedStudents() {
   return [...students].filter(student => student.penalty > 0).sort((a, b) => b.penalty - a.penalty || a.studentId.localeCompare(b.studentId));
 }
@@ -209,16 +244,19 @@ function classGroups() {
 function renderTop3() {
   $('#top3').innerHTML = blacklistedStudents().slice(0, 3).map((student, index) => `
     <article class="top-card place-${index + 1}" aria-label="블랙리스트 ${index + 1}위 ${escapeHtml(student.name)}">
-      <div class="podium-card">
-        <img class="clipboard-clip" src="clipboard-clip-v1.png" alt="" aria-hidden="true">
-        <div class="clipboard-paper">
+      <div class="death-note-book">
+        <div class="note-page">
           <div class="podium-head">
             <span class="podium-rank">${String(index + 1).padStart(2, '0')}</span>
           </div>
           <h3>${escapeHtml(student.name)}</h3>
           <p class="podium-id">${student.studentId} · 2학년 ${student.class}반</p>
           <div class="podium-score"><span>누적 벌점</span><strong>${formatPenalty(student.penalty)}점</strong></div>
-          <div class="podium-meta"><b>${student.hours.toFixed(1)}시간</b></div>
+          <div class="note-history">
+            <div class="note-history-heading"><b>벌점 기록</b><small>현재 저장된 기록 기준</small></div>
+            ${penaltyHistoryMarkup(student.studentId)}
+          </div>
+          <div class="podium-meta"><span>자습</span><b>${student.hours.toFixed(1)}시간</b></div>
         </div>
       </div>
     </article>`).join('');

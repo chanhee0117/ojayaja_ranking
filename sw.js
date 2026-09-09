@@ -1,17 +1,17 @@
-const CACHE_NAME = 'daejin-self-study-v73';
+const CACHE_NAME = 'daejin-self-study-v74';
 const APP_SHELL = [
   './',
   './index.html',
-  './styles.css?v=73',
+  './styles.css?v=74',
   './config.js?v=46',
-  './script.js?v=72',
+  './script.js?v=73',
   './manifest.webmanifest',
   './icon-192.png',
   './icon-512.png',
   './apple-touch-icon.png',
-  './clipboard-clip-v1.png',
+  './daejin-school-emblem.png',
   './chalkboard-surface-v1.png',
-  './deathnote-board-v1.png',
+  './deathnote-stage-v2.png',
   './KCCKimhoon.woff2'
 ];
 
