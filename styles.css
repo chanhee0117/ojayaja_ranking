@@ -94,17 +94,16 @@ input[type='checkbox']{width:17px;min-height:17px;height:17px;padding:0;accent-c
 .top-section::after,.chalk-section::after{content:'';position:absolute;inset:-6px;z-index:-1;border:1px solid rgba(225,190,137,.24);border-radius:9px;pointer-events:none}
 .top-section .section-heading,.chalk-section .title{position:relative;z-index:1}
 .top-section h2,.chalk-section h2{color:#f6f1df;font:400 37px/1.14 var(--script);letter-spacing:.2px;text-shadow:0 1px 0 rgba(255,255,255,.14),0 2px 12px rgba(0,0,0,.22)}
-.top-section .section-heading>p,.chalk-section .hint{color:rgba(242,237,220,.7)}
+.chalk-section .hint{color:rgba(242,237,220,.7)}
 .chalk-section>h2{margin-bottom:18px}
-.top-section{overflow:hidden;padding:37px 34px 34px;border-width:1px;border-color:#3b1518;border-radius:20px;background-color:#09090a;background-image:linear-gradient(180deg,rgba(2,2,3,.08),rgba(12,0,2,.34)),url('deathnote-stage-v2.png');background-position:center;background-size:cover;box-shadow:0 28px 66px rgba(37,6,9,.28),0 0 0 1px #080808,inset 0 0 0 1px rgba(236,92,92,.08),inset 0 0 80px rgba(0,0,0,.36)}
-.top-section::before{content:'';position:absolute;inset:0;z-index:0;background:radial-gradient(circle at 50% 45%,transparent 0,rgba(2,2,3,.06) 43%,rgba(2,2,3,.48) 100%),linear-gradient(90deg,rgba(4,4,5,.3),transparent 22%,transparent 78%,rgba(4,4,5,.3));pointer-events:none}
+.top-section{overflow:hidden;padding:37px 34px 34px;border-width:1px;border-color:#3b1518;border-radius:20px;background-color:#09090a;background-image:linear-gradient(180deg,rgba(2,2,3,.02),rgba(12,0,2,.15)),url('deathnote-blood-board-v1.png');background-position:center;background-size:cover;box-shadow:0 28px 66px rgba(37,6,9,.28),0 0 0 1px #080808,inset 0 0 0 1px rgba(236,92,92,.08),inset 0 0 80px rgba(0,0,0,.25)}
+.top-section::before{content:'';position:absolute;inset:0;z-index:0;background:radial-gradient(circle at 50% 45%,transparent 0,rgba(2,2,3,.03) 43%,rgba(2,2,3,.28) 100%),linear-gradient(90deg,rgba(4,4,5,.16),transparent 22%,transparent 78%,rgba(4,4,5,.16));pointer-events:none}
 .top-section::after{inset:8px;z-index:0;border-color:rgba(204,64,68,.22);border-radius:13px}
 .top-section .section-heading,.top-section .top3{position:relative;z-index:1}
 .top-section .section-heading{display:grid;justify-items:center;gap:4px;text-align:center}
 .top-section h2{display:flex;width:100%;min-height:112px;align-items:center;justify-content:center;margin:0}
 .top-section h2::after{display:none}
 .death-note-title{display:block;width:min(470px,88%);height:auto;mix-blend-mode:screen;filter:drop-shadow(0 9px 17px rgba(0,0,0,.72));pointer-events:none;user-select:none}
-.top-section .section-heading>p{margin:0;color:#d5aaab;font-weight:650;text-align:center;text-shadow:0 2px 9px rgba(0,0,0,.72)}
 .top3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));align-items:end;gap:21px;margin-top:28px;padding:16px 3px 4px}
 .top-card{min-width:0;--tilt:0deg}
 .top-card.place-1{order:2;transform:translateY(-12px)}
@@ -323,7 +322,7 @@ aside label{display:block;margin:8px 0 6px;color:var(--muted);font-size:11px;fon
 @media(max-width:760px){
   .head,main,footer{width:min(100% - 28px,1180px)}section{margin-top:48px}
   .overview{margin-top:18px;padding:31px 22px;border-radius:18px;gap:28px}.overview::after{right:-82px;top:66%;width:340px;opacity:.055}.overview-copy{padding-left:16px}.overview h1{font-size:39px;letter-spacing:-2px}.summary-grid{grid-template-columns:repeat(2,1fr)}
-  .top-section,.chalk-section{padding:22px 17px;border-width:7px}.top-section{padding:29px 20px 25px;border-width:1px}.top-section h2{min-height:94px}.death-note-title{width:min(450px,94%)}.chalk-section h2{font-size:34px}.section-heading,.title{align-items:flex-start}.top-section .section-heading>p{display:none}.top3{grid-template-columns:1fr;gap:30px}.top-card.place-1,.top-card.place-2,.top-card.place-3{order:initial;transform:none;--tilt:0deg}.death-note-book,.place-1 .death-note-book{min-height:0;max-width:440px;margin:auto}.note-page{min-height:382px}
+  .top-section,.chalk-section{padding:22px 17px;border-width:7px}.top-section{padding:29px 20px 25px;border-width:1px}.top-section h2{min-height:94px}.death-note-title{width:min(450px,94%)}.chalk-section h2{font-size:34px}.section-heading,.title{align-items:flex-start}.top3{grid-template-columns:1fr;gap:30px}.top-card.place-1,.top-card.place-2,.top-card.place-3{order:initial;transform:none;--tilt:0deg}.death-note-book,.place-1 .death-note-book{min-height:0;max-width:440px;margin:auto}.note-page{min-height:382px}
   .scroll{overflow-x:hidden;overflow-y:auto;touch-action:pan-y;overscroll-behavior-x:none}
   .scroll table{min-width:0;table-layout:fixed}
   .scroll th,.scroll td{padding:12px 7px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:12.5px}
