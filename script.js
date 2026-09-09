@@ -210,14 +210,18 @@ function renderTop3() {
   $('#top3').innerHTML = blacklistedStudents().slice(0, 3).map((student, index) => `
     <article class="top-card place-${index + 1}" aria-label="블랙리스트 ${index + 1}위 ${escapeHtml(student.name)}">
       <div class="podium-card">
-        <div class="podium-head">
-          <span class="podium-rank">${index + 1}</span>
-          <span class="podium-badge">블랙리스트 ${index + 1}위</span>
+        <img class="clipboard-clip" src="clipboard-clip-v1.png" alt="" aria-hidden="true">
+        <div class="clipboard-paper">
+          <div class="podium-head">
+            <span class="podium-rank">${String(index + 1).padStart(2, '0')}</span>
+            <span class="podium-badge">특별관리 ${index + 1}위</span>
+          </div>
+          <p class="paper-note">지도 기록</p>
+          <h3>${escapeHtml(student.name)}</h3>
+          <p class="podium-id">${student.studentId} · 2학년 ${student.class}반</p>
+          <div class="podium-score"><span>누적 벌점</span><strong>${formatPenalty(student.penalty)}점</strong></div>
+          <div class="podium-meta"><span>SELF-STUDY RECORD</span><b>${student.hours.toFixed(1)}시간</b></div>
         </div>
-        <h3>${escapeHtml(student.name)}</h3>
-        <p class="podium-id">${student.studentId} · 2학년 ${student.class}반</p>
-        <div class="podium-score"><strong>${formatPenalty(student.penalty)}점</strong><span>누적 벌점</span></div>
-        <div class="podium-meta">자습 ${student.hours.toFixed(1)}시간</div>
       </div>
     </article>`).join('');
 }
@@ -316,7 +320,7 @@ function renderClasses() {
         <span class="race-label">2학년 ${group.class}반<small>총 ${group.hours.toFixed(1)}h · 평균 ${group.average.toFixed(1)}h · 벌점 ${formatPenalty(group.penalty)}점</small></span>
         <span class="race-track"><span class="race-bar" style="width:${width}%"></span></span>
         <span class="race-score">${group.reflected.toFixed(1)}h</span>
-        <span class="race-gap">${index === 0 ? '👑 선두' : `−${(max - group.reflected).toFixed(1)}h`}</span>
+        <span class="race-gap">${index === 0 ? '현재 선두' : `−${(max - group.reflected).toFixed(1)}h`}</span>
       </button>`;
   }).join('');
 
