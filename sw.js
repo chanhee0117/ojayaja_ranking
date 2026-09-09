@@ -1,8 +1,8 @@
-const CACHE_NAME = 'daejin-self-study-v80';
+const CACHE_NAME = 'daejin-self-study-v81';
 const APP_SHELL = [
   './',
   './index.html',
-  './styles.css?v=78',
+  './styles.css?v=79',
   './config.js?v=46',
   './script.js?v=73',
   './manifest.webmanifest',
@@ -12,6 +12,7 @@ const APP_SHELL = [
   './daejin-school-emblem.png',
   './chalkboard-surface-v1.png',
   './deathnote-blood-board-v1.png',
+  './deathnote-first-dagger-v1.png',
   './deathnote-title-v3.png',
   './KCCKimhoon.woff2'
 ];
