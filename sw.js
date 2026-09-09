@@ -1,4 +1,4 @@
-const CACHE_NAME = 'daejin-self-study-v76';
+const CACHE_NAME = 'daejin-self-study-v77';
 const APP_SHELL = [
   './',
   './index.html',
@@ -12,7 +12,7 @@ const APP_SHELL = [
   './daejin-school-emblem.png',
   './chalkboard-surface-v1.png',
   './deathnote-stage-v2.png',
-  './deathnote-title-v1.png',
+  './deathnote-title-v2.png',
   './KCCKimhoon.woff2'
 ];
 
