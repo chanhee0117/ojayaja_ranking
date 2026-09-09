@@ -247,6 +247,14 @@ aside label{display:block;margin:8px 0 6px;color:var(--muted);font-size:11px;fon
 
 @media(max-width:760px){
   .head,main,footer{width:min(100% - 28px,1180px)}section{margin-top:46px}.overview{margin-top:18px;padding:28px 22px;border-radius:20px;gap:26px}.overview::after{right:-72px;top:64%;width:330px;opacity:.055}h1{font-size:36px;letter-spacing:-1.7px}.summary-grid{grid-template-columns:repeat(2,1fr)}
+  .scroll{overflow-x:hidden;overflow-y:auto;touch-action:pan-y;overscroll-behavior-x:none}
+  .scroll table{min-width:0;table-layout:fixed}
+  .scroll th,.scroll td{padding:12px 7px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:11px}
+  .scroll th{font-size:9.5px}
+  .scroll th:nth-child(1),.scroll td:nth-child(1){width:45px}
+  .scroll th:nth-child(2),.scroll td:nth-child(2){width:68px}
+  .scroll th:nth-child(4),.scroll td:nth-child(4){width:72px}
+  .scroll th:nth-child(5),.scroll td:nth-child(5){width:62px}
   .top-section{padding:24px 18px}.section-heading,.title{align-items:flex-start}.section-heading>p{display:none}.top3{grid-template-columns:1fr;gap:10px}.top-card.place-1,.top-card.place-2,.top-card.place-3{order:initial}.place-1 .podium-card,.podium-card{min-height:0;padding:18px}.podium-card h3{margin-top:18px}.podium-score{margin-top:18px}.podium-card::after{width:90px;height:90px}
   .feed-item{grid-template-columns:1fr auto}.feed-reason{grid-column:1}.feed-item time{grid-column:2;grid-row:2}.race-row{grid-template-columns:34px 1fr auto;padding:13px}.race-track{grid-column:2/4}.race-score{grid-column:2}.race-gap{grid-column:3}.clean-list{grid-template-columns:1fr}.penalty-guide{grid-template-columns:1fr}.guide-card:last-child{grid-column:auto}.student-result{grid-template-columns:repeat(2,1fr)}
   .penalty-rule{grid-template-columns:1fr 54px}.stepper{grid-column:1/-1}.penalty-summary{grid-template-columns:1fr}.policy-page{margin:20px 14px;padding:24px}
