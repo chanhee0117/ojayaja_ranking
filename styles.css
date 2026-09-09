@@ -239,6 +239,122 @@ aside label{display:block;margin:8px 0 6px;color:var(--muted);font-size:11px;fon
 .policy-page p{color:#526159;font-size:14px}
 .policy-page a{color:var(--green);font-weight:800}
 
+/* 교실 칠판 테마 */
+:root{
+  --board:#214b3c;
+  --board-deep:#17392f;
+  --chalk:#f7f2df;
+  --chalk-muted:#c7d7ce;
+  --chalk-yellow:#f2d77b;
+  --chalk-pink:#f2aaa8;
+  --wood:#976a45;
+  --wood-dark:#62432d;
+}
+
+h1,h2,h3,.eyebrow,.section-kicker{font-family:'Nanum Pen Script','Gaegu',Pretendard,sans-serif}
+section>h2,.title h2{color:#255b45;font-size:31px;font-weight:400;letter-spacing:.1px}
+
+.overview,.top-section,.panel,.race-row,.guide-card{
+  color:var(--chalk);
+  border:6px solid var(--wood);
+  border-radius:10px;
+  background:
+    linear-gradient(105deg,rgba(255,255,255,.025),transparent 22%,rgba(255,255,255,.018) 48%,transparent 72%),
+    radial-gradient(ellipse at 18% 25%,rgba(255,255,255,.035),transparent 36%),
+    radial-gradient(ellipse at 82% 76%,rgba(0,0,0,.1),transparent 42%),
+    var(--board);
+  box-shadow:inset 0 0 58px rgba(3,25,18,.3),0 12px 28px rgba(48,38,28,.15),0 0 0 2px var(--wood-dark);
+}
+
+.overview{border-radius:12px}
+.overview::after{opacity:.1;filter:grayscale(1) brightness(1.65);mix-blend-mode:screen}
+.overview .eyebrow{color:var(--chalk-yellow);font-size:20px;letter-spacing:.4px}
+.overview h1{color:var(--chalk);font-size:clamp(48px,6vw,74px);font-weight:400;line-height:.98;letter-spacing:.3px;text-shadow:0 1px 0 rgba(255,255,255,.25)}
+.overview h1 em{color:#b9e3ca}
+.summary-grid article{min-height:112px;border:2px dashed rgba(247,242,223,.38);border-radius:7px;background:rgba(10,42,31,.18);box-shadow:none;font-family:'Gaegu',Pretendard,sans-serif}
+.summary-grid article:first-child{border-color:rgba(242,215,123,.62);background:rgba(242,215,123,.06)}
+.summary-grid span{color:var(--chalk-muted);font-size:15px}
+.summary-grid strong,.summary-grid article:first-child strong{color:var(--chalk);font-size:30px;font-weight:700}
+
+.top-section{padding:28px 30px 31px}
+.top-section .section-kicker{color:var(--chalk-yellow);font-size:17px;letter-spacing:1px}
+.top-section h2{color:var(--chalk);font-size:38px;font-weight:400;letter-spacing:.2px}
+.top-section .section-heading>p{color:var(--chalk-muted);font:700 15px 'Gaegu',Pretendard,sans-serif}
+.podium-card,.place-1 .podium-card{
+  min-height:228px;
+  color:var(--chalk);
+  border:2px dashed rgba(247,242,223,.42);
+  border-radius:7px;
+  background:rgba(8,34,27,.2);
+  box-shadow:none;
+  font-family:'Gaegu',Pretendard,sans-serif;
+}
+.place-1 .podium-card{border-color:rgba(242,215,123,.82);background:rgba(242,215,123,.055)}
+.podium-card::after{border-color:rgba(247,242,223,.075)}
+.place-1 .podium-card::after{border-color:rgba(242,215,123,.11)}
+.podium-rank{background:rgba(247,242,223,.12);color:#d9e3dd;font-size:24px}
+.place-1 .podium-rank{background:var(--chalk-yellow);color:#4a3a14}
+.place-3 .podium-rank{background:rgba(226,161,113,.2);color:#f1c09d}
+.podium-badge{background:rgba(242,170,168,.11);color:var(--chalk-pink);font-size:13px}
+.podium-card h3{color:var(--chalk);font-size:30px;font-weight:700}
+.podium-id,.podium-score span,.podium-meta{color:var(--chalk-muted);font-size:13px}
+.podium-score{border-top-color:rgba(247,242,223,.2)}
+.podium-score strong{color:var(--chalk-pink);font-size:31px}
+
+.panel{font-family:'Gaegu',Pretendard,sans-serif}
+.scroll::-webkit-scrollbar-track,.clean-list::-webkit-scrollbar-track{background:rgba(0,0,0,.12)}
+.scroll::-webkit-scrollbar-thumb,.clean-list::-webkit-scrollbar-thumb{background:rgba(247,242,223,.36)}
+table{font-family:'Gaegu',Pretendard,sans-serif}
+th,td{border-bottom-color:rgba(247,242,223,.13)}
+th{background:var(--board-deep);color:#d4e1da;font-size:14px;font-weight:700;letter-spacing:.3px}
+td{color:var(--chalk);font-size:16px}
+tbody tr:hover{background:rgba(255,255,255,.045)}
+.empty-table{color:var(--chalk-muted)}
+.expelled{background:linear-gradient(90deg,rgba(242,170,168,.12),transparent 68%)}
+.danger{color:var(--chalk-pink)!important}
+.clean-text{color:#aee0c1!important}
+.status-chip{font-family:Pretendard,sans-serif}
+
+.feed-item{border-bottom-color:rgba(247,242,223,.13)}
+.feed-student b{font-size:17px}
+.feed-student small,.feed-reason,.feed-item time{color:var(--chalk-muted);font-size:13px}
+.feed-item strong{color:var(--chalk-pink);font-size:15px}
+.feed-empty{color:var(--chalk-muted);font-size:15px}
+
+.race-row{border-width:5px;border-color:var(--wood);color:var(--chalk)}
+.race-row:hover{border-color:#a87951;background-color:#285543}
+.race-row.lead{border-color:#a97b45;background:linear-gradient(90deg,rgba(242,215,123,.07),transparent),var(--board)}
+.race-rank{background:rgba(247,242,223,.12);color:var(--chalk);font:700 20px 'Gaegu',sans-serif}
+.race-row.lead .race-rank{background:var(--chalk-yellow);color:#4a3a14}
+.race-label{font:700 19px 'Gaegu',Pretendard,sans-serif}
+.race-label small{color:var(--chalk-muted);font-size:13px}
+.race-track{background:rgba(0,0,0,.25)}
+.race-bar{background:linear-gradient(90deg,#9fd7b4,#e4f0e7)}
+.race-row.lead .race-bar{background:linear-gradient(90deg,#e5ba55,#fff1ad)}
+.race-score{font:700 20px 'Gaegu',sans-serif}
+.race-gap{color:var(--chalk-muted);font:700 14px 'Gaegu',sans-serif}
+.race-row.lead .race-gap{color:var(--chalk-yellow)}
+.class-detail h3{font-size:27px}.class-detail li{border-bottom-color:rgba(247,242,223,.14);font-size:15px}.class-detail li small{color:var(--chalk-muted);font-size:13px}
+
+.clean-count{font:700 17px 'Gaegu',sans-serif}
+.clean-stats div{border:2px dashed rgba(174,224,193,.35);border-radius:7px;background:rgba(174,224,193,.045)}
+.clean-stats span{color:var(--chalk-muted);font-size:14px}.clean-stats b{color:#c7ead4;font-size:23px}
+.clean-class{border:2px dashed rgba(247,242,223,.3);border-radius:7px;background:rgba(0,0,0,.08)}
+.clean-class-title{border-bottom-color:rgba(247,242,223,.15);background:rgba(255,255,255,.035)}
+.clean-class-title h3{font-size:20px}.clean-class-title span{color:#b9e3ca;font-size:15px}
+.clean-class li{border-bottom-color:rgba(247,242,223,.12);font-size:15px}.clean-class li span{color:var(--chalk-muted)}.clean-class li em{color:#b9e3ca;font-size:13px}
+.clean-benefits{border:2px dashed rgba(242,215,123,.4);border-radius:7px;background:rgba(242,215,123,.045)}
+.clean-benefits b{color:var(--chalk-yellow);font-size:17px}.clean-benefits span{background:rgba(255,255,255,.07);color:var(--chalk);font-size:14px}
+
+.guide-card{border-width:5px}
+.guide-number{color:var(--chalk-yellow);font:400 23px 'Nanum Pen Script',sans-serif}
+.guide-card h3{font-size:21px;font-weight:700}.guide-card p{color:var(--chalk-muted);font-size:14px}.guide-card strong{color:var(--chalk-pink);font:700 19px 'Gaegu',sans-serif}
+
+.search form input{border-color:rgba(247,242,223,.36);background:rgba(255,255,255,.94);color:var(--text)}
+.student-result{background:transparent}
+.student-result>div{border:2px dashed rgba(247,242,223,.28);border-radius:7px;background:rgba(0,0,0,.08)}
+.student-result span:first-child{color:var(--chalk-muted);font-size:14px}.student-result b{font-size:18px}
+
 @media(max-width:1020px){
   .head{flex-wrap:wrap;gap:10px;padding:10px 0}.logo{margin-right:auto}nav{order:3;width:100%;overflow:auto;margin:0;padding-bottom:1px}#updated{font-size:9px}
   .overview{grid-template-columns:1fr;padding:38px}.summary-grid{grid-template-columns:repeat(4,1fr)}.summary-grid article{min-height:94px;padding:16px}.summary-grid strong{font-size:20px}
@@ -249,8 +365,8 @@ aside label{display:block;margin:8px 0 6px;color:var(--muted);font-size:11px;fon
   .head,main,footer{width:min(100% - 28px,1180px)}section{margin-top:46px}.overview{margin-top:18px;padding:28px 22px;border-radius:20px;gap:26px}.overview::after{right:-72px;top:64%;width:330px;opacity:.055}h1{font-size:36px;letter-spacing:-1.7px}.summary-grid{grid-template-columns:repeat(2,1fr)}
   .scroll{overflow-x:hidden;overflow-y:auto;touch-action:pan-y;overscroll-behavior-x:none}
   .scroll table{min-width:0;table-layout:fixed}
-  .scroll th,.scroll td{padding:12px 7px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:11px}
-  .scroll th{font-size:9.5px}
+  .scroll th,.scroll td{padding:12px 7px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:12.5px}
+  .scroll th{font-size:11.5px}
   .scroll th:nth-child(1),.scroll td:nth-child(1){width:45px}
   .scroll th:nth-child(2),.scroll td:nth-child(2){width:68px}
   .scroll th:nth-child(4),.scroll td:nth-child(4){width:72px}
