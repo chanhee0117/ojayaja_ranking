@@ -1,8 +1,8 @@
-const CACHE_NAME = 'daejin-self-study-v75';
+const CACHE_NAME = 'daejin-self-study-v76';
 const APP_SHELL = [
   './',
   './index.html',
-  './styles.css?v=75',
+  './styles.css?v=76',
   './config.js?v=46',
   './script.js?v=73',
   './manifest.webmanifest',
