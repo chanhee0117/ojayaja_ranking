@@ -17,7 +17,6 @@
   --serif:'Hahmlet','Apple SD Gothic Neo',serif;
   --sans:Pretendard,-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
   --script:'KCCKimhoon','Apple SD Gothic Neo',cursive;
-  --death-script:'Black And White Picture','KCCKimhoon','Apple SD Gothic Neo',cursive;
 }
 
 @font-face{font-family:'KCCKimhoon';src:url('KCCKimhoon.woff2') format('woff2');font-style:normal;font-weight:400;font-display:swap}
@@ -101,9 +100,11 @@ input[type='checkbox']{width:17px;min-height:17px;height:17px;padding:0;accent-c
 .top-section::before{content:'';position:absolute;inset:0;z-index:0;background:radial-gradient(circle at 50% 45%,transparent 0,rgba(2,2,3,.06) 43%,rgba(2,2,3,.48) 100%),linear-gradient(90deg,rgba(4,4,5,.3),transparent 22%,transparent 78%,rgba(4,4,5,.3));pointer-events:none}
 .top-section::after{inset:8px;z-index:0;border-color:rgba(204,64,68,.22);border-radius:13px}
 .top-section .section-heading,.top-section .top3{position:relative;z-index:1}
-.top-section h2{position:relative;display:inline-block;color:#f4f0e8;font:400 58px/.92 var(--death-script);letter-spacing:.6px;text-shadow:0 2px 0 #080809,3px 4px 0 rgba(104,9,14,.82),0 0 18px rgba(234,230,220,.12),0 12px 30px rgba(0,0,0,.7)}
-.top-section h2::after{content:'';position:absolute;left:3px;right:8%;bottom:-11px;height:3px;transform:rotate(-1.2deg);background:linear-gradient(90deg,#e04349,#6e0e13 58%,rgba(110,14,19,0));box-shadow:0 0 14px rgba(198,36,43,.62)}
-.top-section .section-heading>p{color:#d5aaab;font-weight:650;text-shadow:0 2px 9px rgba(0,0,0,.72)}
+.top-section .section-heading{display:grid;justify-items:center;gap:4px;text-align:center}
+.top-section h2{display:flex;width:100%;min-height:112px;align-items:center;justify-content:center;margin:0}
+.top-section h2::after{display:none}
+.death-note-title{display:block;width:min(470px,88%);height:auto;mix-blend-mode:screen;filter:drop-shadow(0 9px 17px rgba(0,0,0,.72));pointer-events:none;user-select:none}
+.top-section .section-heading>p{margin:0;color:#d5aaab;font-weight:650;text-align:center;text-shadow:0 2px 9px rgba(0,0,0,.72)}
 .top3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));align-items:end;gap:21px;margin-top:28px;padding:16px 3px 4px}
 .top-card{min-width:0;--tilt:0deg}
 .top-card.place-1{order:2;transform:translateY(-12px)}
@@ -320,7 +321,7 @@ aside label{display:block;margin:8px 0 6px;color:var(--muted);font-size:11px;fon
 @media(max-width:760px){
   .head,main,footer{width:min(100% - 28px,1180px)}section{margin-top:48px}
   .overview{margin-top:18px;padding:31px 22px;border-radius:18px;gap:28px}.overview::after{right:-82px;top:66%;width:340px;opacity:.055}.overview-copy{padding-left:16px}.overview h1{font-size:39px;letter-spacing:-2px}.summary-grid{grid-template-columns:repeat(2,1fr)}
-  .top-section,.chalk-section{padding:22px 17px;border-width:7px}.top-section{padding:29px 20px 25px;border-width:1px}.top-section h2{font-size:49px}.chalk-section h2{font-size:34px}.section-heading,.title{align-items:flex-start}.section-heading>p{display:none}.top3{grid-template-columns:1fr;gap:27px}.top-card.place-1,.top-card.place-2,.top-card.place-3{order:initial;transform:none;--tilt:0deg}.death-note-book,.place-1 .death-note-book{min-height:0;max-width:430px;margin:auto}.note-page{min-height:344px}
+  .top-section,.chalk-section{padding:22px 17px;border-width:7px}.top-section{padding:29px 20px 25px;border-width:1px}.top-section h2{min-height:94px}.death-note-title{width:min(450px,94%)}.chalk-section h2{font-size:34px}.section-heading,.title{align-items:flex-start}.top-section .section-heading>p{display:none}.top3{grid-template-columns:1fr;gap:27px}.top-card.place-1,.top-card.place-2,.top-card.place-3{order:initial;transform:none;--tilt:0deg}.death-note-book,.place-1 .death-note-book{min-height:0;max-width:430px;margin:auto}.note-page{min-height:344px}
   .scroll{overflow-x:hidden;overflow-y:auto;touch-action:pan-y;overscroll-behavior-x:none}
   .scroll table{min-width:0;table-layout:fixed}
   .scroll th,.scroll td{padding:12px 7px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:12.5px}
@@ -335,7 +336,7 @@ aside label{display:block;margin:8px 0 6px;color:var(--muted);font-size:11px;fon
 @media(max-width:480px){
   .head{width:calc(100% - 24px)}.logo>b{font-size:13px}#updated{display:none}nav a{padding:8px;font-size:11px}
   .overview{padding:27px 18px}.overview h1{font-size:33px}.summary-grid{gap:8px}.summary-grid article{min-height:83px;padding:13px}.summary-grid strong{font-size:18px}
-  .top-section,.chalk-section{margin-inline:-2px}.top-section h2{font-size:43px}.chalk-section h2{font-size:31px}.note-page{padding-inline:25px 18px}.death-note-book h3{font-size:28px}
+  .top-section,.chalk-section{margin-inline:-2px}.top-section h2{min-height:78px}.death-note-title{width:100%}.chalk-section h2{font-size:31px}.note-page{padding-inline:25px 18px}.death-note-book h3{font-size:28px}
   .clean-stats{grid-template-columns:1fr}.student-result{grid-template-columns:1fr}.search{padding:16px}.search form{flex-direction:column}
   .admin{right:12px;bottom:12px}aside{right:10px;bottom:64px;width:calc(100vw - 20px);max-height:calc(100vh - 80px);padding:18px}.selected-student.valid{flex-direction:column}
 }
