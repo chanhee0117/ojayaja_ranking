@@ -1,7 +1,7 @@
 const CONFIG = {
   // 실제 벌점 스프레드시트
   SHEET_ID: '1tG8sd7XMOgkechtCgQOz9ROHF3jCcIe1tQcLOgWFbyg',
-  SHEET_GID: 1239065071,
+  SHEET_GID: 890818435,
 
   // A열=반, B열=번호, C열=이름, D열=자습 총시수, E열=벌점
   HOURS_COLUMN: 4,

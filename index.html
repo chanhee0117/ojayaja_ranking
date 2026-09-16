@@ -14,7 +14,7 @@
   <link rel="apple-touch-icon" href="daejin-apple-touch-icon-v1.png">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css">
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Hahmlet:wght@600;700;800;900&amp;display=swap">
-  <link rel="stylesheet" href="styles.css?v=79">
+  <link rel="stylesheet" href="styles.css?v=81">
 </head>
 <body>
   <div id="protectedApp">
@@ -125,7 +125,8 @@
     <h2 id="adminTitle">감독학생 벌점 기록</h2>
     <form id="loginForm">
       <label for="password">관리자 비밀번호</label>
-      <div class="login-row"><input id="password" type="password" placeholder="비밀번호 입력" autocomplete="current-password"><button>로그인</button></div>
+      <div class="login-row"><input id="password" type="password" placeholder="비밀번호 입력" autocomplete="current-password" minlength="8" maxlength="64" required><button>로그인</button></div>
+      <p id="loginError" class="login-error" aria-live="polite"></p>
     </form>
 
     <div id="adminTools" hidden>
@@ -159,7 +160,21 @@
   </aside>
   </div>
 
-  <script src="config.js?v=46"></script>
-  <script src="script.js?v=73"></script>
+  <section id="securityLock" class="security-lock" role="alertdialog" aria-modal="true" aria-labelledby="securityLockTitle" hidden>
+    <div class="security-lock__scan" aria-hidden="true"></div>
+    <div class="security-lock__frame">
+      <div class="security-lock__mark" aria-hidden="true"><span>!</span></div>
+      <p class="security-lock__eyebrow">SECURITY LOCKDOWN · DAEJIN ADMIN</p>
+      <h2 id="securityLockTitle">관리자 접근 차단</h2>
+      <p class="security-lock__message">허가되지 않은 비밀번호 입력이 감지되어<br>이 기기의 관리자 로그인이 잠겼습니다.</p>
+      <div class="security-lock__status"><i aria-hidden="true"></i><span>보안 보호 작동 중</span><i aria-hidden="true"></i></div>
+      <div class="security-lock__timer"><span>잠금 해제까지</span><strong id="securityLockTimer">60:00</strong></div>
+      <p class="security-lock__note">일반 순위 조회는 계속 이용할 수 있습니다.<br>관리 기능이 필요하면 담당 관리자에게 문의하세요.</p>
+      <button id="securityLockDismiss" type="button">일반 사이트로 돌아가기</button>
+    </div>
+  </section>
+
+  <script src="config.js?v=47"></script>
+  <script src="script.js?v=74"></script>
 </body>
 </html>

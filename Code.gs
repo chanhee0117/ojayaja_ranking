@@ -4,17 +4,21 @@
  * 사용하는 열
  * A열: 반 / B열: 번호 / C열: 이름 / D열: 자습 총시수 / E열: 벌점
  * 1행: 제목 / 2행부터: 학생 명단
- * D열 총시수는 30분 단위이므로 사이트에는 2로 나눈 시간으로 표시합니다.
+ * D열 총시수는 스프레드시트의 값을 그대로 사이트에 표시합니다.
  *
  * 이 코드는 시트의 열·행·제목·서식을 변경하지 않으며, 벌점 저장 시 해당 학생의 E열 값만 수정합니다.
  * 최근 벌점 30건은 사이트 표시용으로 Script Properties에만 보관합니다.
  */
 const SETTINGS = Object.freeze({
   SHEET_ID: '1tG8sd7XMOgkechtCgQOz9ROHF3jCcIe1tQcLOgWFbyg',
-  SHEET_GID: 1239065071,
+  SHEET_NAME: '2학기 자습 총시수',
+  SHEET_GID: 890818435,
   AUTHORIZED_EDITOR: '202620626@dj.hs.kr',
   API_VERSION: 'v44-secure-pwa',
   ADMIN_PASSWORD_PROPERTY: 'ADMIN_PASSWORD',
+  ADMIN_AUTH_GUARD_PREFIX: 'DAEJIN_ADMIN_GUARD_',
+  ADMIN_LOCK_MS: 60 * 60 * 1000,
+  ADMIN_NEAR_FAILURE_LIMIT: 3,
   // 시범 운영: 2학년 6반만 공개. 정식 운영 때 []로 바꾸면 전 학급이 표시됩니다.
   VISIBLE_CLASSES: [6],
   PENALTY_HEADER_ROW: 1,
@@ -23,7 +27,7 @@ const SETTINGS = Object.freeze({
   NUMBER_COLUMN: 2,
   NAME_COLUMN: 3,
   HOURS_COLUMN: 4,
-  HOURS_DIVISOR: 2,
+  HOURS_DIVISOR: 1,
   PENALTY_COLUMN: 5,
   RECENT_PROPERTY: 'DAEJIN_RECENT_PENALTIES',
   MAX_RECENT: 30,
@@ -61,10 +65,12 @@ function doPost(event) {
         })
       });
     }
-    requireAdminPassword_(parameters.adminPassword);
     if (parameters.action === 'verifyAdmin') {
-      return jsonResponse_({ apiVersion: SETTINGS.API_VERSION, ok: true });
+      const authentication = verifyAdminAttempt_(parameters.adminPassword, parameters.clientToken);
+      authentication.apiVersion = SETTINGS.API_VERSION;
+      return jsonResponse_(authentication);
     }
+    requireAdminPassword_(parameters.adminPassword);
     if (parameters.action === 'clearRecentPenalties') {
       const clearLock = LockService.getScriptLock();
       clearLock.waitLock(10000);
@@ -107,6 +113,99 @@ function requireAdminPassword_(candidate) {
   if (!safeEquals_(candidate, expected)) throw new Error('관리자 인증에 실패했습니다.');
 }
 
+function verifyAdminAttempt_(candidate, clientToken) {
+  const expected = PropertiesService.getScriptProperties().getProperty(SETTINGS.ADMIN_PASSWORD_PROPERTY);
+  if (!expected) throw new Error('Apps Script 속성에 ADMIN_PASSWORD를 먼저 설정해 주세요.');
+
+  const token = String(clientToken || '').trim();
+  if (!/^[A-Za-z0-9_-]{20,100}$/.test(token)) {
+    return { ok: false, message: '보안 식별 정보를 확인하지 못했습니다. 페이지를 새로고침해 주세요.' };
+  }
+
+  const now = Date.now();
+  const cache = CacheService.getScriptCache();
+  const guardKey = adminGuardKey_(token);
+  const scriptLock = LockService.getScriptLock();
+  scriptLock.waitLock(10000);
+  try {
+    let guard = {};
+    try {
+      guard = JSON.parse(cache.get(guardKey) || '{}');
+    } catch (ignored) {
+      guard = {};
+    }
+
+    if (Number(guard.lockUntil) > now) {
+      return {
+        ok: false,
+        securityLocked: true,
+        lockUntil: Number(guard.lockUntil),
+        message: '보안상 관리자 접근이 잠겼습니다.'
+      };
+    }
+
+    if (safeEquals_(candidate, expected)) {
+      cache.remove(guardKey);
+      return { ok: true };
+    }
+
+    const recentWindow = now - Number(guard.lastFailedAt || 0) < 10 * 60 * 1000;
+    const previousFailures = recentWindow ? Number(guard.failures || 0) : 0;
+    const nearTypo = isNearPasswordTypo_(String(candidate || ''), expected);
+    const failures = previousFailures + (nearTypo ? 1 : SETTINGS.ADMIN_NEAR_FAILURE_LIMIT);
+    const securityLocked = !nearTypo || failures >= SETTINGS.ADMIN_NEAR_FAILURE_LIMIT;
+    const lockUntil = securityLocked ? now + SETTINGS.ADMIN_LOCK_MS : 0;
+    cache.put(guardKey, JSON.stringify({
+      failures: failures,
+      lastFailedAt: now,
+      lockUntil: lockUntil
+    }), Math.ceil(SETTINGS.ADMIN_LOCK_MS / 1000));
+
+    return {
+      ok: false,
+      securityLocked: securityLocked,
+      lockUntil: lockUntil || undefined,
+      message: securityLocked
+        ? '허가되지 않은 관리자 접근 시도가 감지되어 로그인이 잠겼습니다.'
+        : '관리자 인증에 실패했습니다. 비밀번호를 다시 확인해 주세요.'
+    };
+  } finally {
+    scriptLock.releaseLock();
+  }
+}
+
+function adminGuardKey_(clientToken) {
+  const digest = Utilities.computeDigest(
+    Utilities.DigestAlgorithm.SHA_256,
+    clientToken,
+    Utilities.Charset.UTF_8
+  );
+  const hex = digest.map(function(value) {
+    return ('0' + ((value + 256) % 256).toString(16)).slice(-2);
+  }).join('');
+  return SETTINGS.ADMIN_AUTH_GUARD_PREFIX + hex.slice(0, 32);
+}
+
+function isNearPasswordTypo_(candidate, expected) {
+  if (!candidate || Math.abs(candidate.length - expected.length) > 2) return false;
+  return editDistance_(candidate, expected) <= 2;
+}
+
+function editDistance_(left, right) {
+  const previous = [];
+  const current = [];
+  for (let column = 0; column <= right.length; column += 1) previous[column] = column;
+  for (let row = 1; row <= left.length; row += 1) {
+    current[0] = row;
+    for (let column = 1; column <= right.length; column += 1) {
+      const substitution = previous[column - 1] + (left.charAt(row - 1) === right.charAt(column - 1) ? 0 : 1);
+      current[column] = Math.min(previous[column] + 1, current[column - 1] + 1, substitution);
+    }
+    for (let column = 0; column <= right.length; column += 1) previous[column] = current[column];
+  }
+  return previous[right.length];
+}
+
 function safeEquals_(left, right) {
   const leftDigest = Utilities.computeDigest(Utilities.DigestAlgorithm.SHA_256, String(left || ''), Utilities.Charset.UTF_8);
   const rightDigest = Utilities.computeDigest(Utilities.DigestAlgorithm.SHA_256, String(right || ''), Utilities.Charset.UTF_8);
@@ -126,17 +225,11 @@ function requireAuthorizedDeployer_() {
 
 function penaltySheet_() {
   const spreadsheet = SpreadsheetApp.openById(SETTINGS.SHEET_ID);
-  const configuredSheet = spreadsheet.getSheetById(SETTINGS.SHEET_GID);
-  if (configuredSheet && hasExpectedLayout_(configuredSheet)) return configuredSheet;
-
-  const matchingSheets = spreadsheet.getSheets().filter(function(sheet) {
-    return hasExpectedLayout_(sheet);
-  });
-  if (matchingSheets.length === 1) return matchingSheets[0];
-  if (matchingSheets.length > 1) {
-    throw new Error('같은 열 구조를 가진 시트가 여러 개입니다: ' + matchingSheets.map(function(sheet) { return sheet.getName(); }).join(', '));
-  }
-  throw new Error('C1 이름, D1 자습 총시수, E1 벌점 구조의 시트를 찾지 못했습니다.');
+  const sheet = spreadsheet.getSheetByName(SETTINGS.SHEET_NAME);
+  if (!sheet) throw new Error('지정된 시트를 찾지 못했습니다: ' + SETTINGS.SHEET_NAME);
+  if (sheet.getSheetId() !== SETTINGS.SHEET_GID) throw new Error('지정된 시트의 GID가 일치하지 않습니다.');
+  if (!hasExpectedLayout_(sheet)) throw new Error('지정된 시트의 C1 이름, D1 자습 총시수, E1 벌점 구조를 확인해 주세요.');
+  return sheet;
 }
 
 function hasExpectedLayout_(sheet) {

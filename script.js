@@ -24,6 +24,10 @@ const PENALTY_RULES = [
 
 const PENALTY_HOURS_WEIGHT = 2;
 const REQUIRED_API_VERSION = 'v44-secure-pwa';
+const AUTH_CLIENT_TOKEN_KEY = 'daejin-admin-client-token';
+const AUTH_LOCK_UNTIL_KEY = 'daejin-admin-lock-until';
+const AUTH_FAILURES_KEY = 'daejin-admin-failures';
+const AUTH_LOCK_DURATION_MS = 60 * 60 * 1000;
 const $ = selector => document.querySelector(selector);
 
 let students = [];
@@ -33,6 +37,120 @@ let saving = false;
 let activeApiVersion = '';
 let selections = emptySelections();
 let adminPassword = '';
+let securityLockTimer = 0;
+let fallbackClientToken = '';
+
+function storageGet(key) {
+  try {
+    return localStorage.getItem(key);
+  } catch (error) {
+    return null;
+  }
+}
+
+function storageSet(key, value) {
+  try {
+    localStorage.setItem(key, String(value));
+  } catch (error) {
+    // Private browsing may disable persistent storage. The server guard still applies.
+  }
+}
+
+function storageRemove(key) {
+  try {
+    localStorage.removeItem(key);
+  } catch (error) {
+    // No-op when storage is unavailable.
+  }
+}
+
+function randomClientToken() {
+  const bytes = new Uint8Array(24);
+  if (window.crypto?.getRandomValues) {
+    window.crypto.getRandomValues(bytes);
+    return Array.from(bytes, value => value.toString(16).padStart(2, '0')).join('');
+  }
+  return `${Date.now().toString(36)}_${Math.random().toString(36).slice(2)}_${Math.random().toString(36).slice(2)}`;
+}
+
+function adminClientToken() {
+  const stored = storageGet(AUTH_CLIENT_TOKEN_KEY);
+  if (/^[A-Za-z0-9_-]{20,100}$/.test(stored || '')) return stored;
+  if (!fallbackClientToken) fallbackClientToken = randomClientToken();
+  storageSet(AUTH_CLIENT_TOKEN_KEY, fallbackClientToken);
+  return fallbackClientToken;
+}
+
+function activeSecurityLockUntil() {
+  const value = Number(storageGet(AUTH_LOCK_UNTIL_KEY) || 0);
+  if (value > Date.now()) return value;
+  if (value) storageRemove(AUTH_LOCK_UNTIL_KEY);
+  return 0;
+}
+
+function setLoginDisabled(disabled) {
+  $('#password').disabled = disabled;
+  $('#loginForm button').disabled = disabled;
+}
+
+function updateSecurityLockTimer(lockUntil) {
+  const remaining = Math.max(0, lockUntil - Date.now());
+  if (!remaining) {
+    clearInterval(securityLockTimer);
+    securityLockTimer = 0;
+    storageRemove(AUTH_LOCK_UNTIL_KEY);
+    storageRemove(AUTH_FAILURES_KEY);
+    setLoginDisabled(false);
+    $('#securityLock').hidden = true;
+    document.body.classList.remove('security-lock-open');
+    $('#loginError').textContent = '';
+    return;
+  }
+  const totalSeconds = Math.ceil(remaining / 1000);
+  const minutes = Math.floor(totalSeconds / 60);
+  const seconds = totalSeconds % 60;
+  $('#securityLockTimer').textContent = `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+}
+
+function showSecurityLock(lockUntil) {
+  const safeLockUntil = Math.max(Number(lockUntil) || 0, Date.now() + 1000);
+  storageSet(AUTH_LOCK_UNTIL_KEY, safeLockUntil);
+  admin = false;
+  adminPassword = '';
+  $('#password').value = '';
+  $('#loginForm').hidden = false;
+  $('#adminTools').hidden = true;
+  $('#admin').hidden = true;
+  setLoginDisabled(true);
+  $('#securityLock').hidden = false;
+  document.body.classList.add('security-lock-open');
+  clearInterval(securityLockTimer);
+  updateSecurityLockTimer(safeLockUntil);
+  securityLockTimer = window.setInterval(() => updateSecurityLockTimer(safeLockUntil), 1000);
+  $('#securityLockDismiss').focus();
+}
+
+function noteFallbackLoginFailure() {
+  const failures = Number(storageGet(AUTH_FAILURES_KEY) || 0) + 1;
+  storageSet(AUTH_FAILURES_KEY, failures);
+  if (failures >= 3) {
+    const lockUntil = Date.now() + AUTH_LOCK_DURATION_MS;
+    showSecurityLock(lockUntil);
+    return true;
+  }
+  return false;
+}
+
+function clearLoginGuard() {
+  storageRemove(AUTH_FAILURES_KEY);
+  storageRemove(AUTH_LOCK_UNTIL_KEY);
+  clearInterval(securityLockTimer);
+  securityLockTimer = 0;
+  setLoginDisabled(false);
+  $('#securityLock').hidden = true;
+  document.body.classList.remove('security-lock-open');
+  $('#loginError').textContent = '';
+}
 
 function emptySelections() {
   return Object.fromEntries(PENALTY_RULES.map(rule => [rule.key, 0]));
@@ -617,6 +735,11 @@ function setup() {
   };
 
   $('#adminToggle').onclick = () => {
+    const lockUntil = activeSecurityLockUntil();
+    if (lockUntil) {
+      showSecurityLock(lockUntil);
+      return;
+    }
     $('#admin').hidden = false;
     if (!CONFIG.APPS_SCRIPT_URL) showSaveMessage('현재 읽기 전용입니다. 새 Apps Script /exec 주소를 config.js에 입력하면 저장 버튼이 활성화됩니다.', 'pending');
     setTimeout(() => (admin ? $('#penaltyStudent') : $('#password')).focus(), 0);
@@ -624,18 +747,35 @@ function setup() {
   $('#closeAdmin').onclick = () => { $('#admin').hidden = true; };
   $('#loginForm').onsubmit = async event => {
     event.preventDefault();
+    const existingLock = activeSecurityLockUntil();
+    if (existingLock) {
+      showSecurityLock(existingLock);
+      return;
+    }
     const candidate = $('#password').value;
     const submitButton = $('#loginForm button');
+    $('#loginError').textContent = '';
     submitButton.disabled = true;
     try {
       const form = new URLSearchParams({
         action: 'verifyAdmin',
         apiVersion: REQUIRED_API_VERSION,
-        adminPassword: candidate
+        adminPassword: candidate,
+        clientToken: adminClientToken()
       });
       const response = await fetch(CONFIG.APPS_SCRIPT_URL, { method: 'POST', body: form });
       const result = await response.json();
-      if (!response.ok || result.ok === false) throw new Error(result.message || '관리자 인증에 실패했습니다.');
+      if (result.securityLocked) {
+        showSecurityLock(Number(result.lockUntil) || Date.now() + AUTH_LOCK_DURATION_MS);
+        return;
+      }
+      if (!response.ok || result.ok === false) {
+        const authenticationFailure = /관리자 인증에 실패/.test(String(result.message || ''));
+        const locallyLocked = authenticationFailure && noteFallbackLoginFailure();
+        if (!locallyLocked) $('#loginError').textContent = result.message || '관리자 인증에 실패했습니다. 비밀번호를 다시 확인해 주세요.';
+        return;
+      }
+      clearLoginGuard();
       adminPassword = candidate;
       admin = true;
       $('#password').value = '';
@@ -643,10 +783,15 @@ function setup() {
       $('#adminTools').hidden = false;
       $('#penaltyStudent').focus();
     } catch (error) {
-      alert(error.message || '관리자 인증에 실패했습니다.');
+      $('#loginError').textContent = '인증 서버에 연결하지 못했습니다. 잠시 후 다시 시도해 주세요.';
     } finally {
-      submitButton.disabled = false;
+      submitButton.disabled = Boolean(activeSecurityLockUntil());
     }
+  };
+
+  $('#securityLockDismiss').onclick = () => {
+    $('#securityLock').hidden = true;
+    document.body.classList.remove('security-lock-open');
   };
 
   $('#penaltyStudent').oninput = () => {
@@ -679,6 +824,9 @@ function setup() {
   document.addEventListener('keydown', event => {
     if (event.key === 'Escape' && !$('#admin').hidden) $('#admin').hidden = true;
   });
+
+  const savedLockUntil = activeSecurityLockUntil();
+  if (savedLockUntil) showSecurityLock(savedLockUntil);
 
   updatePenaltyTool();
 }
