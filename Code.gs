@@ -117,10 +117,12 @@ function verifyAdminAttempt_(candidate, clientToken) {
   const expected = PropertiesService.getScriptProperties().getProperty(SETTINGS.ADMIN_PASSWORD_PROPERTY);
   if (!expected) throw new Error('Apps Script 속성에 ADMIN_PASSWORD를 먼저 설정해 주세요.');
 
-  const token = String(clientToken || '').trim();
-  if (!/^[A-Za-z0-9_-]{20,100}$/.test(token)) {
-    return { ok: false, message: '보안 식별 정보를 확인하지 못했습니다. 페이지를 새로고침해 주세요.' };
-  }
+  const submittedToken = String(clientToken || '').trim();
+  // 일부 모바일 브라우저/웹뷰는 교차 출처 폼 요청에서 기기 토큰을 누락합니다.
+  // 이때 인증 자체를 막지 않고 공용 보안 버킷으로 묶어 동일한 잠금 정책을 적용합니다.
+  const token = /^[A-Za-z0-9_-]{20,100}$/.test(submittedToken)
+    ? submittedToken
+    : 'GLOBAL_UNIDENTIFIED_CLIENT';
 
   const now = Date.now();
   const cache = CacheService.getScriptCache();
