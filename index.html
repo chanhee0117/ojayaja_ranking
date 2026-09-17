@@ -14,7 +14,7 @@
   <link rel="apple-touch-icon" href="daejin-apple-touch-icon-v1.png">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css">
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Hahmlet:wght@600;700;800;900&amp;display=swap">
-  <link rel="stylesheet" href="styles.css?v=82">
+  <link rel="stylesheet" href="styles.css?v=83">
 </head>
 <body>
   <div id="protectedApp">
@@ -50,9 +50,8 @@
     <section id="class-engagement" class="engagement-section" aria-labelledby="engagementTitle">
       <div class="engagement-heading">
         <div>
-          <p class="engagement-kicker">CLASS LEAGUE · LIVE</p>
-          <h2 id="engagementTitle">우리 반 성장 리그</h2>
-          <p>순위 변화를 확인하고, 반 캐릭터를 키우며, 다음 역전까지 직접 계산해 보세요.</p>
+          <h2 id="engagementTitle">반별 추격 현황</h2>
+          <p>선두와의 격차를 확인하고, 반 평균 자습시간으로 성장하는 대학 진학 과정을 살펴보세요.</p>
         </div>
         <span id="engagementMode" class="engagement-mode">전체 반 운영</span>
       </div>
@@ -71,43 +70,13 @@
         <article class="engagement-card mascot-panel" aria-labelledby="mascotTitle">
           <div class="engagement-card-head">
             <div>
-              <span class="card-index">01 · CLASS GUARDIAN</span>
-              <h3 id="mascotTitle">반별 캐릭터 성장</h3>
+              <span class="card-index">반별 진학 로드맵</span>
+              <h3 id="mascotTitle">반별 성장 과정</h3>
             </div>
-            <span class="card-note">자습시간으로 자동 성장</span>
+            <span class="card-note">반 평균 자습시간으로 자동 성장</span>
           </div>
-          <div id="mascotClassTabs" class="team-selector" aria-label="캐릭터를 확인할 반"></div>
+          <div id="mascotClassTabs" class="team-selector" aria-label="성장 과정을 확인할 반"></div>
           <div id="mascotGrowth" class="mascot-growth"></div>
-        </article>
-
-        <article class="engagement-card simulator-panel" aria-labelledby="simulatorTitle">
-          <div class="engagement-card-head">
-            <div>
-              <span class="card-index">02 · RANK LAB</span>
-              <h3 id="simulatorTitle">다음 순위 시뮬레이터</h3>
-            </div>
-            <span class="card-note">현재 반영점수 기준</span>
-          </div>
-
-          <div class="simulator-controls">
-            <label for="simulatorClass">시뮬레이션할 반</label>
-            <select id="simulatorClass" aria-describedby="simulatorAssumption"></select>
-
-            <div class="range-heading">
-              <label for="simulatorHours">남은 기간 1인당 추가 자습시간</label>
-              <output id="simulatorHoursOutput" for="simulatorHours">10.0시간</output>
-            </div>
-            <input id="simulatorHours" type="range" min="0" max="30" step="0.5" value="10">
-            <div class="range-scale" aria-hidden="true"><span>0h</span><span>15h</span><span>30h</span></div>
-          </div>
-
-          <div class="simulator-stats" aria-label="예상 결과">
-            <div><span>현재 순위</span><strong id="simulatorCurrentRank">-</strong></div>
-            <div><span>예상 순위</span><strong id="simulatorProjectedRank">-</strong></div>
-            <div><span>예상 반영시간</span><strong id="simulatorProjectedScore">-</strong></div>
-          </div>
-          <output id="simulatorResult" class="simulator-result" for="simulatorClass simulatorHours" aria-live="polite"></output>
-          <p id="simulatorAssumption" class="simulator-assumption">상대 반 점수와 벌점은 현재 상태로 유지된다고 가정합니다.</p>
         </article>
       </div>
     </section>
@@ -168,7 +137,7 @@
 
     <section id="classes">
       <h2>반 대항전</h2>
-      <p class="hint">개인 벌점 1점당 반 총 자습시간에서 2시간을 차감합니다.</p>
+      <p class="hint">순위는 각 반의 누적 자습시간만으로 집계합니다.</p>
       <div id="classCards" class="race-board"></div>
       <div id="classDetail" class="panel class-detail" hidden></div>
     </section>
@@ -240,6 +209,6 @@
   </section>
 
   <script src="config.js?v=48"></script>
-  <script src="script.js?v=76"></script>
+  <script src="script.js?v=77"></script>
 </body>
 </html>

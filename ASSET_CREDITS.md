@@ -12,3 +12,10 @@
 - `deathnote-blood-board-v1.png`: original full-section black-and-crimson blood-spatter background generated for this project with OpenAI image generation. It uses fictional theatrical liquid, dried-smear, droplet, and smoky textures without people, wounds, weapons, logos, or text.
 - `deathnote-first-dagger-v1.png`: original transparent ceremonial-dagger overlay generated for the first-place notebook with OpenAI image generation. It includes fictional theatrical blood stains and a torn-paper insertion detail, without people, injuries, logos, or text.
 - `daejin-icon-192-v1.png`, `daejin-icon-512-v1.png`, and `daejin-apple-touch-icon-v1.png`: PWA and home-screen icon sizes derived from the user-provided official Daejin High School emblem, with safe white padding for platform icon masks.
+- `assets/stage-college.svg`: original neutral academic-stage emblem created for this project. It represents the generic `전문대` category and is not the mark of a specific institution.
+- `assets/stage-keimyung.png`: Keimyung University shield mark, converted without visual alteration from the university's [official UI page](https://www.kmu.ac.kr/uni/main/page.jsp?mnu_uid=3303).
+- `assets/stage-knu.png`: Kyungpook National University authority mark, converted without visual alteration from the university's [official UI page](https://knu.ac.kr/wbbs/wbbs/contents/index.action?menu_idx=194&menu_url=intro/about04).
+- `assets/stage-snu.png`: Seoul National University emblem, resized proportionally without recoloring from the university's [official identity guide](https://identity.snu.ac.kr/ui/1).
+- `assets/stage-mit.svg`: MIT 2023 red logo sourced from [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:MIT_2023_red_logo.svg), which identifies the MIT brand guide as its source. The mark is displayed without recoloring or distortion.
+
+The university marks are used only as non-commercial visual milestones in the student growth track. Their appearance does not imply affiliation, sponsorship, admission, or endorsement by the institutions; all trademarks remain the property of their respective owners.

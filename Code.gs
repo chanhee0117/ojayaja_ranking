@@ -32,10 +32,10 @@ const SETTINGS = Object.freeze({
   RECENT_PROPERTY: 'DAEJIN_RECENT_PENALTIES',
   MAX_RECENT: 30,
   RECENT_RETENTION_MS: 3 * 24 * 60 * 60 * 1000,
-  COMPETITION_STATE_PROPERTY: 'DAEJIN_COMPETITION_STATE_V1',
+  COMPETITION_STATE_PROPERTY: 'DAEJIN_COMPETITION_STATE_V2',
+  LEGACY_COMPETITION_STATE_PROPERTY: 'DAEJIN_COMPETITION_STATE_V1',
   COMPETITION_EVENT_LIMIT: 12,
-  COMPETITION_EVENT_RETENTION_MS: 3 * 24 * 60 * 60 * 1000,
-  PENALTY_HOURS_WEIGHT: 2
+  COMPETITION_EVENT_RETENTION_MS: 3 * 24 * 60 * 60 * 1000
 });
 
 function doGet() {
@@ -64,7 +64,7 @@ function doPost(event) {
         competition = buildCompetitionPayload_(students);
       } catch (competitionError) {
         competition = {
-          schemaVersion: 1,
+          schemaVersion: 2,
           available: false,
           message: '반 대항 성장 기능을 잠시 불러오지 못했습니다.'
         };
@@ -306,7 +306,7 @@ function buildCompetitionPayload_(students) {
   const now = new Date();
   const current = aggregateClasses_(students);
   if (!current.length) {
-    return { schemaVersion: 1, available: false, observedAt: now.toISOString(), classes: [] };
+    return { schemaVersion: 2, available: false, observedAt: now.toISOString(), classes: [] };
   }
 
   const lock = LockService.getScriptLock();
@@ -323,7 +323,7 @@ function buildCompetitionPayload_(students) {
     previousClasses.forEach(function(item) { previousMap[String(item.class)] = item; });
 
     const fingerprint = current.map(function(item) {
-      return [item.class, item.studentCount, item.totalHours, item.totalPenalty, item.score].join(':');
+      return [item.class, item.studentCount, item.totalHours, item.score].join(':');
     }).join('|');
     const changed = !sameScope || previousState.fingerprint !== fingerprint;
     const retainedEvents = sameScope && Array.isArray(previousState.events)
@@ -336,9 +336,13 @@ function buildCompetitionPayload_(students) {
       : [];
     const events = newEvents.concat(retainedEvents).slice(0, SETTINGS.COMPETITION_EVENT_LIMIT);
 
+    const legacyState = readCompetitionState_(properties, SETTINGS.LEGACY_COMPETITION_STATE_PROPERTY);
+    const legacySameScope = legacyState && legacyState.scopeKey === scopeKey;
     const previousPeaks = sameScope && previousState.mascotPeakXp && typeof previousState.mascotPeakXp === 'object'
       ? previousState.mascotPeakXp
-      : {};
+      : (legacySameScope && legacyState.mascotPeakXp && typeof legacyState.mascotPeakXp === 'object'
+        ? legacyState.mascotPeakXp
+        : {});
     const mascotPeakXp = {};
     const classes = current.map(function(item) {
       const previous = previousMap[String(item.class)] || null;
@@ -354,7 +358,7 @@ function buildCompetitionPayload_(students) {
           rank: previous ? Number(previous.rank) - item.rank : 0,
           score: previous ? roundCompetition_(item.score - Number(previous.score)) : 0
         },
-        mascot: buildMascotState_(peakXp)
+        growth: buildUniversityGrowthState_(peakXp)
       });
     });
 
@@ -371,7 +375,7 @@ function buildCompetitionPayload_(students) {
         };
       });
       properties.setProperty(SETTINGS.COMPETITION_STATE_PROPERTY, JSON.stringify({
-        schemaVersion: 1,
+        schemaVersion: 2,
         scopeKey: scopeKey,
         observedAt: observedAt,
         fingerprint: fingerprint,
@@ -382,12 +386,11 @@ function buildCompetitionPayload_(students) {
     }
 
     return {
-      schemaVersion: 1,
+      schemaVersion: 2,
       available: true,
       observedAt: observedAt,
       scorePolicy: {
-        mode: 'reflectedTotalHours',
-        penaltyHoursWeight: SETTINGS.PENALTY_HOURS_WEIGHT
+        mode: 'totalHours'
       },
       latestAlert: events.length ? events[0] : null,
       classes: classes
@@ -414,7 +417,7 @@ function aggregateClasses_(students) {
     item.totalHours = roundCompetition_(item.totalHours);
     item.totalPenalty = roundPenalty_(item.totalPenalty);
     item.averageHours = roundCompetition_(item.totalHours / Math.max(1, item.studentCount), 2);
-    item.score = roundCompetition_(item.totalHours - item.totalPenalty * SETTINGS.PENALTY_HOURS_WEIGHT);
+    item.score = item.totalHours;
     return item;
   }).sort(function(left, right) {
     return right.score - left.score || left.class - right.class;
@@ -454,24 +457,44 @@ function buildRankChangeEvents_(previousMap, current, now) {
   });
 }
 
-function buildMascotState_(xp) {
+function buildUniversityGrowthState_(xp) {
   const safeXp = Math.max(0, Math.floor(Number(xp) || 0));
-  const level = Math.max(1, Math.floor(Math.sqrt(safeXp / 100)) + 1);
-  const levelStartXp = Math.pow(level - 1, 2) * 100;
-  const nextLevelXp = Math.pow(level, 2) * 100;
-  const progressPercent = Math.max(0, Math.min(100,
-    (safeXp - levelStartXp) / Math.max(1, nextLevelXp - levelStartXp) * 100
-  ));
+  const peakAverageHours = safeXp / 100;
+  const stages = [
+    { key: 'college', label: '전문대', thresholdHours: 0 },
+    { key: 'keimyung', label: '계명대', thresholdHours: 20 },
+    { key: 'knu', label: '경북대', thresholdHours: 40 },
+    { key: 'snu', label: '서울대', thresholdHours: 60 },
+    { key: 'mit', label: 'MIT', thresholdHours: 90 }
+  ];
+  let stageIndex = 0;
+  stages.forEach(function(stage, index) {
+    if (peakAverageHours >= stage.thresholdHours) stageIndex = index;
+  });
+  const stage = stages[stageIndex];
+  const nextStage = stages[stageIndex + 1] || null;
+  const progressPercent = nextStage
+    ? Math.max(0, Math.min(100,
+      (peakAverageHours - stage.thresholdHours)
+      / Math.max(1, nextStage.thresholdHours - stage.thresholdHours) * 100
+    ))
+    : 100;
   return {
     xp: safeXp,
-    level: level,
+    peakAverageHours: roundCompetition_(peakAverageHours, 2),
+    stageIndex: stageIndex,
+    stageKey: stage.key,
+    stageLabel: stage.label,
+    nextStageLabel: nextStage ? nextStage.label : '',
     progressPercent: roundCompetition_(progressPercent, 1),
-    xpToNextLevel: Math.max(0, nextLevelXp - safeXp)
+    hoursToNextStage: nextStage
+      ? roundCompetition_(Math.max(0, nextStage.thresholdHours - peakAverageHours), 2)
+      : 0
   };
 }
 
-function readCompetitionState_(properties) {
-  const raw = properties.getProperty(SETTINGS.COMPETITION_STATE_PROPERTY);
+function readCompetitionState_(properties, propertyName) {
+  const raw = properties.getProperty(propertyName || SETTINGS.COMPETITION_STATE_PROPERTY);
   if (!raw) return {};
   try {
     const parsed = JSON.parse(raw);

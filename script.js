@@ -22,7 +22,6 @@ const PENALTY_RULES = [
   }
 ];
 
-const PENALTY_HOURS_WEIGHT = 2;
 const REQUIRED_API_VERSION = 'v44-secure-pwa';
 const AUTH_CLIENT_TOKEN_KEY = 'daejin-admin-client-token';
 const AUTH_LOCK_UNTIL_KEY = 'daejin-admin-lock-until';
@@ -34,7 +33,6 @@ let students = [];
 let recentPenalties = [];
 let competitionState = null;
 let selectedLeagueClass = null;
-let simulatorHoursValue = 10;
 let admin = false;
 let saving = false;
 let activeApiVersion = '';
@@ -298,10 +296,6 @@ async function load() {
 }
 
 /* ---------------- 화면 렌더링 ---------------- */
-function reflectedHours(student) {
-  return student.hours - student.penalty * PENALTY_HOURS_WEIGHT;
-}
-
 function rankedStudents() {
   return [...students].sort((a, b) => b.hours - a.hours || a.studentId.localeCompare(b.studentId));
 }
@@ -354,7 +348,7 @@ function classGroups() {
     (map[student.class] ??= []).push(student);
     return map;
   }, {})).map(group => {
-    const hours = group.reduce((sum, student) => sum + student.hours, 0);
+    const hours = roundPenalty(group.reduce((sum, student) => sum + student.hours, 0));
     const penalty = roundPenalty(group.reduce((sum, student) => sum + student.penalty, 0));
     return {
       class: group[0].class,
@@ -362,9 +356,9 @@ function classGroups() {
       hours,
       penalty,
       average: hours / group.length,
-      reflected: hours - penalty * PENALTY_HOURS_WEIGHT
+      score: hours
     };
-  }).sort((a, b) => b.reflected - a.reflected || a.class - b.class);
+  }).sort((a, b) => b.score - a.score || a.class - b.class);
 }
 
 const CLASS_PALETTES = [
@@ -389,64 +383,39 @@ function classThemeStyle(classNumber) {
   return `--team-primary:${palette.primary};--team-accent:${palette.accent}`;
 }
 
-function guardianSvg(classNumber, compact = false) {
-  const suffix = compact ? 'mini' : 'hero';
-  const gradientId = `guardian-${classNumber}-${suffix}`;
-  return `
-    <svg class="guardian-crest" viewBox="0 0 180 180" aria-hidden="true" focusable="false">
-      <defs>
-        <linearGradient id="${gradientId}" x1="35" y1="24" x2="145" y2="158" gradientUnits="userSpaceOnUse">
-          <stop stop-color="var(--team-accent)"/>
-          <stop offset=".48" stop-color="var(--team-primary)"/>
-          <stop offset="1" stop-color="#102c24"/>
-        </linearGradient>
-      </defs>
-      <circle class="guardian-aura" cx="90" cy="90" r="73" fill="none" stroke="var(--team-primary)" stroke-width="2" stroke-dasharray="3 9"/>
-      <path class="guardian-wings" d="M62 84C42 68 24 71 14 80c16 1 24 8 30 18-12 0-20 5-26 12 22-1 37 6 49 21l7-32-12-15Zm56 0c20-16 38-13 48-4-16 1-24 8-30 18 12 0 20 5 26 12-22-1-37 6-49 21l-7-32 12-15Z" fill="var(--team-accent)"/>
-      <path d="M90 24 141 43v41c0 36-20 59-51 73-31-14-51-37-51-73V43l51-19Z" fill="url(#${gradientId})" stroke="rgba(255,255,255,.7)" stroke-width="3"/>
-      <path d="M57 70c0-22 14-34 33-34s33 12 33 34v24c0 23-14 38-33 38S57 117 57 94V70Z" fill="#f6f2e7" stroke="rgba(13,48,40,.32)" stroke-width="3"/>
-      <path d="m58 68 32-19 32 19-5-21-27-12-27 12-5 21Z" fill="var(--team-primary)"/>
-      <path d="M64 75c8-8 44-8 52 0" fill="none" stroke="var(--team-accent)" stroke-width="4" stroke-linecap="round"/>
-      <circle cx="76" cy="87" r="5" fill="#18362d"/><circle cx="104" cy="87" r="5" fill="#18362d"/>
-      <path d="M78 107c8 5 16 5 24 0" fill="none" stroke="#7d5d45" stroke-width="3" stroke-linecap="round"/>
-      <path d="M67 119h46l-5 24H72l-5-24Z" fill="#fff" stroke="var(--team-primary)" stroke-width="3"/>
-      <path d="M90 120v21" stroke="var(--team-accent)" stroke-width="2"/>
-      <text x="90" y="137" text-anchor="middle" fill="var(--team-primary)" font-family="Pretendard,sans-serif" font-size="12" font-weight="900">${Number(classNumber)}반</text>
-    </svg>`;
+const UNIVERSITY_STAGES = Object.freeze([
+  { key: 'college', label: '전문대', thresholdHours: 0, logo: 'assets/stage-college.svg' },
+  { key: 'keimyung', label: '계명대', thresholdHours: 20, logo: 'assets/stage-keimyung.png' },
+  { key: 'knu', label: '경북대', thresholdHours: 40, logo: 'assets/stage-knu.png' },
+  { key: 'snu', label: '서울대', thresholdHours: 60, logo: 'assets/stage-snu.png' },
+  { key: 'mit', label: 'MIT', thresholdHours: 90, logo: 'assets/stage-mit.svg' }
+]);
+
+function universityStageIndex(hours) {
+  const safeHours = Math.max(0, Number(hours) || 0);
+  return UNIVERSITY_STAGES.reduce((currentIndex, stage, index) => (
+    safeHours >= stage.thresholdHours ? index : currentIndex
+  ), 0);
 }
 
-function fallbackMascotState(group) {
-  const xp = Math.max(0, Math.floor(group.average * 100));
-  const level = Math.max(1, Math.floor(Math.sqrt(xp / 100)) + 1);
-  const levelStartXp = Math.pow(level - 1, 2) * 100;
-  const nextLevelXp = Math.pow(level, 2) * 100;
-  const progressPercent = Math.max(0, Math.min(100, (xp - levelStartXp) / Math.max(1, nextLevelXp - levelStartXp) * 100));
-  return { xp, level, progressPercent, xpToNextLevel: Math.max(0, nextLevelXp - xp) };
-}
-
-function mascotStateFor(group) {
-  const fallback = fallbackMascotState(group);
+function universityGrowthStateFor(group) {
   const remoteClass = Array.isArray(competitionState?.classes)
     ? competitionState.classes.find(item => Number(item.class) === group.class)
     : null;
-  const remote = remoteClass?.mascot;
-  const xp = Number.isFinite(Number(remote?.xp)) ? Math.max(fallback.xp, Number(remote.xp)) : fallback.xp;
-  const level = Number.isFinite(Number(remote?.level)) ? Math.max(1, Number(remote.level)) : fallback.level;
-  const progressPercent = Number.isFinite(Number(remote?.progressPercent))
-    ? Math.max(0, Math.min(100, Number(remote.progressPercent)))
-    : fallback.progressPercent;
-  const xpToNextLevel = Number.isFinite(Number(remote?.xpToNextLevel))
-    ? Math.max(0, Number(remote.xpToNextLevel))
-    : fallback.xpToNextLevel;
-  const stages = [
-    { max: 3, label: '새싹', index: 1, next: '성장', nextLevel: 4 },
-    { max: 7, label: '성장', index: 2, next: '진화', nextLevel: 8 },
-    { max: 11, label: '진화', index: 3, next: '각성', nextLevel: 12 },
-    { max: Infinity, label: '각성', index: 4, next: '', nextLevel: 0 }
-  ];
-  const stage = stages.find(item => level <= item.max) || stages[3];
-  const evolutionXp = stage.nextLevel ? Math.max(0, Math.pow(stage.nextLevel - 1, 2) * 100 - xp) : 0;
-  return { xp, level, progressPercent, xpToNextLevel, stage, evolutionXp };
+  const remote = remoteClass?.growth || remoteClass?.mascot;
+  const remotePeakHours = Number.isFinite(Number(remote?.peakAverageHours))
+    ? Number(remote.peakAverageHours)
+    : (Number.isFinite(Number(remote?.xp)) ? Number(remote.xp) / 100 : 0);
+  const peakAverageHours = Math.max(0, group.average, remotePeakHours);
+  const stageIndex = universityStageIndex(peakAverageHours);
+  const stage = UNIVERSITY_STAGES[stageIndex];
+  const nextStage = UNIVERSITY_STAGES[stageIndex + 1] || null;
+  const progressPercent = nextStage
+    ? Math.max(0, Math.min(100, (peakAverageHours - stage.thresholdHours)
+      / Math.max(1, nextStage.thresholdHours - stage.thresholdHours) * 100))
+    : 100;
+  const hoursToNextStage = nextStage ? Math.max(0, nextStage.thresholdHours - peakAverageHours) : 0;
+  return { peakAverageHours, stageIndex, stage, nextStage, progressPercent, hoursToNextStage };
 }
 
 function renderReversalAlert() {
@@ -482,18 +451,23 @@ function renderReversalAlert() {
 
   const leader = groups[0];
   const chaser = groups[1];
-  const gap = Math.max(0, leader.reflected - chaser.reflected);
+  const gap = Math.max(0, leader.score - chaser.score);
   alert.innerHTML = `
     <span class="reversal-signal" aria-hidden="true"><i></i></span>
-    <div><small>현재 추격 현황</small><strong>${chaser.class}반이 ${leader.class}반을 ${gap.toFixed(1)}시간 차이로 추격 중!</strong><p>새 자습 기록이 반영되면 순위와 격차가 자동으로 다시 계산됩니다.</p></div>
-    <span class="reversal-badge">LIVE</span>`;
+    <div class="chase-copy"><small>현재 추격 현황</small><strong>${chaser.class}반이 ${leader.class}반을 추격 중!</strong><p>순위는 반별 총 자습시간만으로 계산합니다.</p></div>
+    <div class="chase-duel" aria-label="선두 ${leader.class}반과 추격 ${chaser.class}반의 자습시간 격차 ${gap.toFixed(1)}시간">
+      <div class="chase-team is-leader"><small>선두</small><strong>${leader.class}반</strong><span>${leader.score.toFixed(1)}h</span></div>
+      <b class="chase-versus" aria-hidden="true">VS</b>
+      <div class="chase-team is-chaser"><small>추격</small><strong>${chaser.class}반</strong><span>${chaser.score.toFixed(1)}h</span></div>
+      <div class="chase-gap"><small>격차</small><strong>${gap.toFixed(1)}h</strong></div>
+    </div>`;
 }
 
-function renderMascotGrowth() {
+function renderUniversityGrowth() {
   const groups = classGroups();
   if (!groups.length) {
     $('#mascotClassTabs').innerHTML = '';
-    $('#mascotGrowth').innerHTML = '<p class="hint">반 데이터를 불러오면 캐릭터가 나타납니다.</p>';
+    $('#mascotGrowth').innerHTML = '<p class="hint">반 데이터를 불러오면 성장 과정이 나타납니다.</p>';
     return;
   }
   if (!groups.some(group => group.class === selectedLeagueClass)) {
@@ -501,95 +475,48 @@ function renderMascotGrowth() {
   }
 
   $('#mascotClassTabs').innerHTML = groups.map(group => {
-    const mascot = mascotStateFor(group);
+    const growth = universityGrowthStateFor(group);
     return `
       <button class="team-tab ${group.class === selectedLeagueClass ? 'is-active' : ''}" type="button" data-team-class="${group.class}" aria-pressed="${group.class === selectedLeagueClass}" style="${classThemeStyle(group.class)}">
-        ${guardianSvg(group.class, true)}
-        <span><b>${group.class}반</b><small>LV.${mascot.level} · ${mascot.stage.label}</small></span>
+        <span class="team-tab-logo"><img src="${growth.stage.logo}" alt="" aria-hidden="true"></span>
+        <span><b>${group.class}반</b><small>${growth.stage.label} · 평균 ${group.average.toFixed(1)}h</small></span>
       </button>`;
   }).join('');
 
   const group = groups.find(item => item.class === selectedLeagueClass) || groups[0];
-  const mascot = mascotStateFor(group);
-  const nextText = mascot.stage.next
-    ? `다음 ${mascot.stage.next}까지 ${mascot.evolutionXp.toLocaleString('ko-KR')}XP`
-    : '최고 성장 단계 달성';
+  const growth = universityGrowthStateFor(group);
+  const nextText = growth.nextStage
+    ? `다음 ${growth.nextStage.label}까지 ${growth.hoursToNextStage.toFixed(1)}시간`
+    : '최종 성장 단계 달성';
   $('#mascotGrowth').innerHTML = `
-    <div class="mascot-hero stage-${mascot.stage.index}" data-class="${group.class}" style="${classThemeStyle(group.class)}">
-      <div class="mascot-visual">${guardianSvg(group.class)}</div>
-      <div class="mascot-copy">
-        <span>2학년 ${group.class}반 · 현재 ${groups.findIndex(item => item.class === group.class) + 1}위</span>
-        <h4>LV.${mascot.level} <em>${mascot.stage.label}</em></h4>
-        <p>반 평균 자습 ${group.average.toFixed(1)}시간으로 성장했어요.</p>
-        <div class="xp-heading"><span>레벨 성장도</span><b>${mascot.xp.toLocaleString('ko-KR')} XP</b></div>
-        <div class="xp-track" role="progressbar" aria-label="${group.class}반 다음 레벨 성장도" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${Math.round(mascot.progressPercent)}" aria-valuetext="${Math.round(mascot.progressPercent)}퍼센트"><i style="width:${mascot.progressPercent}%"></i></div>
-        <div class="xp-meta"><span>다음 레벨까지 ${mascot.xpToNextLevel.toLocaleString('ko-KR')}XP</span><span>${nextText}</span></div>
+    <div class="university-growth stage-${growth.stage.key}" data-class="${group.class}" style="${classThemeStyle(group.class)}">
+      <div class="university-current">
+        <div class="university-logo"><img src="${growth.stage.logo}" alt="${growth.stage.label} 성장 단계 로고"></div>
+        <div class="university-copy">
+          <span>2학년 ${group.class}반 · 현재 ${groups.findIndex(item => item.class === group.class) + 1}위</span>
+          <h4>${growth.stage.label}<em>현재 도달 대학</em></h4>
+          <p>현재 반 평균 <b>${group.average.toFixed(1)}시간</b> · 최고 반 평균 <b>${growth.peakAverageHours.toFixed(1)}시간</b></p>
+          <div class="growth-heading"><span>다음 대학 성장도</span><b>${nextText}</b></div>
+          <div class="growth-track" role="progressbar" aria-label="${group.class}반 다음 대학 성장도" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${Math.round(growth.progressPercent)}" aria-valuetext="${Math.round(growth.progressPercent)}퍼센트"><i style="width:${growth.progressPercent}%"></i></div>
+        </div>
       </div>
+      <ol class="university-roadmap" aria-label="${group.class}반 대학 성장 과정">
+        ${UNIVERSITY_STAGES.map((stage, index) => {
+          const stateClass = index < growth.stageIndex ? 'is-complete' : (index === growth.stageIndex ? 'is-current' : 'is-locked');
+          const stateText = index < growth.stageIndex ? '달성' : (index === growth.stageIndex ? '현재' : `${stage.thresholdHours}h`);
+          return `<li class="university-stage ${stateClass}">
+            <span class="university-stage-logo"><img src="${stage.logo}" alt="" aria-hidden="true"></span>
+            <b>${stage.label}</b><small>${stateText}</small>
+          </li>`;
+        }).join('')}
+      </ol>
+      <p class="university-disclaimer">성장 단계 연출용 · 각 대학과 제휴·보증 관계 없음</p>
     </div>`;
-}
-
-function renderRankSimulator(announce = false) {
-  const groups = classGroups();
-  const select = $('#simulatorClass');
-  if (!groups.length) {
-    select.innerHTML = '<option>반 데이터 없음</option>';
-    select.disabled = true;
-    $('#simulatorResult').textContent = '반 데이터를 불러오면 예상 순위를 계산할 수 있습니다.';
-    return;
-  }
-  if (!groups.some(group => group.class === selectedLeagueClass)) selectedLeagueClass = groups[0].class;
-
-  const previousValue = Number(select.value);
-  select.innerHTML = groups.map(group => `<option value="${group.class}">2학년 ${group.class}반</option>`).join('');
-  const desiredClass = groups.some(group => group.class === selectedLeagueClass)
-    ? selectedLeagueClass
-    : (groups.some(group => group.class === previousValue) ? previousValue : groups[0].class);
-  select.value = String(desiredClass);
-  select.disabled = groups.length < 2;
-  selectedLeagueClass = desiredClass;
-
-  const group = groups.find(item => item.class === desiredClass);
-  const currentRank = groups.findIndex(item => item.class === desiredClass) + 1;
-  const projectedScore = group.reflected + simulatorHoursValue * group.students.length;
-  const projected = groups.map(item => ({
-    class: item.class,
-    score: item.class === desiredClass ? projectedScore : item.reflected
-  })).sort((a, b) => b.score - a.score || a.class - b.class);
-  const projectedRank = projected.findIndex(item => item.class === desiredClass) + 1;
-
-  $('#simulatorHours').value = String(simulatorHoursValue);
-  $('#simulatorHoursOutput').textContent = `${simulatorHoursValue.toFixed(1)}시간`;
-  $('#simulatorCurrentRank').textContent = `${currentRank}위`;
-  $('#simulatorProjectedRank').textContent = groups.length > 1 ? `${projectedRank}위` : '시범';
-  $('#simulatorProjectedScore').textContent = `${projectedScore.toFixed(1)}h`;
-
-  const result = $('#simulatorResult');
-  result.setAttribute('aria-live', announce ? 'polite' : 'off');
-  if (groups.length < 2) {
-    result.innerHTML = `<b>${group.class}반의 예상 반영시간은 ${projectedScore.toFixed(1)}시간</b>이에요. 전체 반 운영이 시작되면 같은 슬라이더로 추월 가능성과 예상 순위를 바로 확인할 수 있습니다.`;
-    $('#simulatorAssumption').textContent = '현재는 한 개 반의 데이터만 표시됩니다. 시뮬레이션 값은 저장되지 않습니다.';
-    return;
-  }
-
-  $('#simulatorAssumption').textContent = '상대 반 점수와 벌점은 현재 상태로 유지된다고 가정합니다. 시뮬레이션 값은 저장되지 않습니다.';
-  if (projectedRank < currentRank) {
-    const passed = groups.filter((item, index) => index + 1 < currentRank && item.reflected < projectedScore).map(item => `${item.class}반`);
-    result.innerHTML = `<b>${projectedRank}위까지 상승 가능!</b> 1인당 ${simulatorHoursValue.toFixed(1)}시간을 더 쌓으면 ${passed.slice(-3).join(' · ')}을 추월하는 계산입니다.`;
-  } else if (currentRank === 1) {
-    const second = projected.find(item => item.class !== desiredClass);
-    const lead = second ? Math.max(0, projectedScore - second.score) : 0;
-    result.innerHTML = `<b>선두 유지 예상</b> · 현재 조건이면 2위와의 예상 격차는 ${lead.toFixed(1)}시간입니다.`;
-  } else {
-    const target = groups[currentRank - 2];
-    const requiredPerStudent = Math.max(0, (target.reflected - group.reflected + 0.1) / Math.max(1, group.students.length));
-    result.innerHTML = `<b>${target.class}반을 넘으려면 1인당 약 ${requiredPerStudent.toFixed(1)}시간</b>이 더 필요해요. 슬라이더를 움직여 역전 조건을 확인해 보세요.`;
-  }
 }
 
 function renderEngagement() {
   renderReversalAlert();
-  renderMascotGrowth();
-  renderRankSimulator(false);
+  renderUniversityGrowth();
 }
 
 function renderTop3() {
@@ -695,19 +622,19 @@ function renderClasses() {
     $('#classCards').innerHTML = '<p class="hint">반 데이터가 없습니다.</p>';
     return;
   }
-  const max = groups[0].reflected;
-  const min = Math.min(...groups.map(group => group.reflected));
+  const max = groups[0].score;
+  const min = Math.min(...groups.map(group => group.score));
   const span = max - min || 1;
 
   $('#classCards').innerHTML = groups.map((group, index) => {
-    const width = 14 + 86 * ((group.reflected - min) / span);
+    const width = 14 + 86 * ((group.score - min) / span);
     return `
       <button class="race-row ${index === 0 ? 'lead' : ''}" data-class="${group.class}" style="--i:${index}" type="button">
         <span class="race-rank">${index + 1}</span>
-        <span class="race-label">2학년 ${group.class}반<small>총 ${group.hours.toFixed(1)}h · 평균 ${group.average.toFixed(1)}h · 벌점 ${formatPenalty(group.penalty)}점</small></span>
+        <span class="race-label">2학년 ${group.class}반<small>총 ${group.hours.toFixed(1)}h · 평균 ${group.average.toFixed(1)}h</small></span>
         <span class="race-track"><span class="race-bar" style="width:${width}%"></span></span>
-        <span class="race-score">${group.reflected.toFixed(1)}h</span>
-        <span class="race-gap">${index === 0 ? '현재 선두' : `−${(max - group.reflected).toFixed(1)}h`}</span>
+        <span class="race-score">${group.score.toFixed(1)}h</span>
+        <span class="race-gap">${index === 0 ? '현재 선두' : `−${(max - group.score).toFixed(1)}h`}</span>
       </button>`;
   }).join('');
 
@@ -725,7 +652,7 @@ function showClass(classNumber) {
   $('#classDetail').innerHTML = `
     <h3>2학년 ${classNumber}반 · ${position}위</h3>
     <ol>${members.map((student, index) => `
-      <li><span>#${index + 1} <b>${student.studentId} ${escapeHtml(student.name)}</b></span><small>자습 ${student.hours.toFixed(1)}h · 벌점 ${formatPenalty(student.penalty)}점 · 반영 ${reflectedHours(student).toFixed(1)}h</small></li>`).join('')}</ol>`;
+      <li><span>#${index + 1} <b>${student.studentId} ${escapeHtml(student.name)}</b></span><small>자습 ${student.hours.toFixed(1)}h · 벌점 ${formatPenalty(student.penalty)}점</small></li>`).join('')}</ol>`;
 }
 
 function render() {
@@ -765,7 +692,6 @@ function renderSearchResult(student) {
       <div><span>소속</span><b>2학년 ${student.class}반 ${student.number}번</b></div>
       <div><span>자습시간</span><b>${student.hours.toFixed(1)}h</b></div>
       <div><span>누적 벌점</span><b class="${student.penalty > 0 ? 'danger' : 'clean-text'}">${formatPenalty(student.penalty)}점</b></div>
-      <div><span>반영 점수</span><b>${reflectedHours(student).toFixed(1)}h</b></div>
       <div><span>전체 순위</span><b>${schoolPosition}위</b></div>
       <div><span>반 순위</span><b>${classPosition}위</b></div>
       <div><span>상태</span><b><span class="status-chip ${status.tone}">${status.label}</span></b></div>
@@ -853,7 +779,7 @@ function selectedPenaltyReason() {
 
 async function persistPenalty(student, value, metadata = {}) {
   if (!CONFIG.APPS_SCRIPT_URL) throw new Error('먼저 config.js에 새 Apps Script /exec 주소를 입력해 주세요.');
-  if (activeApiVersion !== REQUIRED_API_VERSION) throw new Error('안전을 위해 저장을 차단했습니다. Apps Script v41을 먼저 배포해 주세요.');
+  if (activeApiVersion !== REQUIRED_API_VERSION) throw new Error(`안전을 위해 저장을 차단했습니다. Apps Script ${REQUIRED_API_VERSION}을 먼저 배포해 주세요.`);
   const safeValue = roundPenalty(Math.max(0, Number(value) || 0));
   const form = new URLSearchParams({
     action: 'setPenalty',
@@ -913,7 +839,7 @@ async function overwritePenalty() {
 
 async function clearRecentPenaltyHistory() {
   if (!admin) return;
-  if (activeApiVersion !== REQUIRED_API_VERSION) throw new Error('Apps Script v41을 먼저 배포해 주세요.');
+  if (activeApiVersion !== REQUIRED_API_VERSION) throw new Error(`Apps Script ${REQUIRED_API_VERSION}을 먼저 배포해 주세요.`);
   if (!window.confirm('최근 벌점 기록을 모두 초기화할까요? 학생들의 누적 벌점은 변경되지 않습니다.')) return;
 
   const button = $('#clearRecentPenalties');
@@ -967,21 +893,7 @@ function setup() {
     const button = event.target.closest('[data-team-class]');
     if (!button) return;
     selectedLeagueClass = Number(button.dataset.teamClass);
-    renderMascotGrowth();
-    renderRankSimulator(true);
-  };
-  $('#simulatorClass').onchange = event => {
-    selectedLeagueClass = Number(event.target.value);
-    renderMascotGrowth();
-    renderRankSimulator(true);
-  };
-  $('#simulatorHours').oninput = event => {
-    simulatorHoursValue = Number(event.target.value) || 0;
-    renderRankSimulator(false);
-  };
-  $('#simulatorHours').onchange = event => {
-    simulatorHoursValue = Number(event.target.value) || 0;
-    renderRankSimulator(true);
+    renderUniversityGrowth();
   };
 
   $('#searchForm').onsubmit = event => {
