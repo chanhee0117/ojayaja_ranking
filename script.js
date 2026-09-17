@@ -360,38 +360,27 @@ function classGroups() {
   }).sort((a, b) => b.score - a.score || a.class - b.class);
 }
 
-const CLASS_PALETTES = [
-  { primary: '#315f50', accent: '#d3ad62' },
-  { primary: '#345d82', accent: '#89b9d8' },
-  { primary: '#86554a', accent: '#d9a978' },
-  { primary: '#59578b', accent: '#b1a9da' },
-  { primary: '#456d45', accent: '#9fc579' },
-  { primary: '#8a6732', accent: '#e2bd68' },
-  { primary: '#346b70', accent: '#7cc4c5' },
-  { primary: '#75506e', accent: '#ce9fc2' },
-  { primary: '#4e6375', accent: '#a9bbc8' },
-  { primary: '#78613e', accent: '#cfb886' }
-];
-
-function classPalette(classNumber) {
-  return CLASS_PALETTES[(Math.max(1, Number(classNumber) || 1) - 1) % CLASS_PALETTES.length];
-}
-
-function fightThemeStyle(targetClass, chaserClass) {
-  const target = classPalette(targetClass);
-  const chaser = classPalette(chaserClass);
-  return `--target-primary:${target.primary};--target-accent:${target.accent};--chaser-primary:${chaser.primary};--chaser-accent:${chaser.accent}`;
-}
-
 function fightIntensity(gap) {
-  if (gap <= 10) return { className: 'is-photo-finish', label: '초접전', english: 'PHOTO FINISH' };
-  if (gap <= 50) return { className: 'is-tight', label: '박빙', english: 'CLOSE FIGHT' };
-  if (gap <= 150) return { className: 'is-chasing', label: '추격 중', english: 'CHASE ON' };
-  return { className: 'is-open', label: '격차 추격', english: 'HUNTING' };
+  if (gap <= 3) return { className: 'is-dead-heat', label: '초초접전' };
+  if (gap <= 10) return { className: 'is-photo-finish', label: '초접전' };
+  if (gap <= 50) return { className: 'is-tight', label: '박빙' };
+  if (gap <= 150) return { className: 'is-chasing', label: '추격권' };
+  return { className: 'is-open', label: '추격 중' };
 }
 
-function fightPressure(gap) {
-  return Math.max(6, Math.min(100, 100 - (gap / 300 * 100)));
+function electionCaption(gap) {
+  if (gap <= 3) return '한 자리만 비어도 순위표가 흔들립니다.';
+  if (gap <= 10) return '새로고침 한 번에 순위가 뒤집힐 수 있습니다.';
+  if (gap <= 50) return '앞선 반, 아직 축하하기 이릅니다.';
+  if (gap <= 150) return '추격 반이 조용히 속도를 올리고 있습니다.';
+  return '거리는 멀어도 집계는 아직 끝나지 않았습니다.';
+}
+
+function matchupShares(targetScore, chaserScore) {
+  const total = targetScore + chaserScore;
+  if (total <= 0) return { target: 50, chaser: 50, margin: 0 };
+  const target = targetScore / total * 100;
+  return { target, chaser: 100 - target, margin: Math.abs(target - (100 - target)) };
 }
 
 function renderReversalAlert() {
@@ -406,10 +395,10 @@ function renderReversalAlert() {
   if (groups.length === 1) {
     $('#engagementMode').textContent = `${groups[0].class}반 기록 집계`;
     alert.innerHTML = `
-      <div class="fight-broadcast-head">
-        <span class="fight-live" aria-hidden="true"><i></i> LIVE</span>
-        <div><small>반 기록 집계 중</small><strong>2학년 ${groups[0].class}반의 대결 상대를 기다리고 있습니다.</strong><p>다른 반 데이터가 추가되면 추격 격차와 대진표가 자동으로 나타납니다.</p></div>
-        <span class="fight-card-label">WAITING</span>
+      <div class="election-broadcast-head">
+        <span class="election-live" aria-hidden="true"><i></i> LIVE</span>
+        <div><small>DAEJIN 선택 2026 · 자습 개표방송</small><strong>2학년 ${groups[0].class}반의 대결 상대를 기다리고 있습니다.</strong><p>다른 반 데이터가 추가되면 실시간 판세가 자동으로 나타납니다.</p></div>
+        <span class="election-count-label">집계 대기</span>
       </div>`;
     return;
   }
@@ -428,56 +417,58 @@ function renderReversalAlert() {
       chaserRank: index + 2,
       gap,
       intensity: fightIntensity(gap),
-      pressure: fightPressure(gap)
+      shares: matchupShares(target.score, chaser.score),
+      caption: electionCaption(gap)
     };
   });
   const closeFightCount = matchups.filter(match => match.gap <= 50).length;
 
-  let summaryLabel = 'DAEJIN CLASS CHAMPIONSHIP';
-  let summaryTitle = `${matchups.length}개 매치업 · ${closeFightCount}개 박빙 승부`;
-  let summaryDescription = '모든 반은 바로 앞 순위를 상대로 추격전을 펼칩니다. 격차가 좁을수록 대결 온도가 높아집니다.';
-  let summaryBadge = 'FIGHT CARD';
+  let summaryLabel = 'DAEJIN 선택 2026 · 자습 개표방송';
+  let summaryTitle = `${matchups.length}개 접전지 · ${closeFightCount}곳 박빙`;
+  let summaryDescription = '각 반을 바로 앞 순위와 일대일로 비교한 실시간 판세입니다.';
+  let summaryBadge = '실시간 집계';
 
   if (hasOvertake) {
     const passed = Array.isArray(latest.passedClasses) ? latest.passedClasses.map(Number).filter(Number.isFinite) : [];
     const passedText = passed.length ? `${passed.join('·')}반을` : '앞선 반을';
     alert.classList.add('is-overtake');
-    summaryLabel = '역전 알림 · 직전 집계 대비';
+    summaryLabel = '순위 속보 · 직전 집계 대비';
     summaryTitle = `${Number(latest.class)}반이 ${passedText} 역전했습니다!`;
-    summaryDescription = `${Number(latest.previousRank)}위에서 ${Number(latest.currentRank)}위로 올라섰습니다. 아래 파이트 카드에서 새 대진과 격차를 확인하세요.`;
-    summaryBadge = 'OVERTAKE';
+    summaryDescription = `${Number(latest.previousRank)}위에서 ${Number(latest.currentRank)}위로 올라섰습니다. 새로 바뀐 접전 구도를 확인하세요.`;
+    summaryBadge = '역전 발생';
   }
 
   alert.innerHTML = `
-    <div class="fight-broadcast-head">
-      <span class="fight-live" aria-hidden="true"><i></i> LIVE</span>
-      <div class="chase-copy"><small>${summaryLabel}</small><strong>${summaryTitle}</strong><p>${summaryDescription}</p></div>
-      <span class="fight-card-label">${summaryBadge}</span>
+    <div class="election-broadcast-head">
+      <span class="election-live" aria-hidden="true"><i></i> LIVE</span>
+      <div class="election-copy"><small>${summaryLabel}</small><strong>${summaryTitle}</strong><p>${summaryDescription}</p></div>
+      <span class="election-count-label">${summaryBadge}</span>
     </div>
-    <div class="fight-grid" aria-label="전체 반 인접 순위별 추격전 대진표">
+    <div class="election-grid" aria-label="전체 반 인접 순위별 실시간 추격 판세">
       ${matchups.map((match, index) => `
-        <article class="fight-match ${index === 0 ? 'is-main-event' : ''} ${match.intensity.className}" style="${fightThemeStyle(match.target.class, match.chaser.class)}" aria-label="${match.targetRank}위 ${match.target.class}반과 ${match.chaserRank}위 ${match.chaser.class}반의 자습시간 격차 ${match.gap.toFixed(1)}시간">
-          <header class="fight-meta">
-            <span>${index === 0 ? 'MAIN EVENT' : `BOUT ${String(index + 1).padStart(2, '0')}`} · ${match.targetRank}/${match.chaserRank}위권</span>
-            <b><i aria-hidden="true"></i>${match.intensity.label}<em>${match.intensity.english}</em></b>
+        <article class="election-race ${index === 0 ? 'is-featured' : ''} ${match.intensity.className}" aria-label="${match.targetRank}위 ${match.target.class}반과 ${match.chaserRank}위 ${match.chaser.class}반의 자습시간 격차 ${match.gap.toFixed(1)}시간">
+          <header class="election-race-head">
+            <span><b>${index === 0 ? '선두 경쟁' : '접전 지역'}</b>${match.targetRank}·${match.chaserRank}위 대결</span>
+            <strong>${match.intensity.label}<small>${match.shares.margin.toFixed(1)}%p 차</small></strong>
           </header>
-          <div class="fight-versus">
-            <div class="fighter fighter-target">
-              <span>#${match.targetRank} ${index === 0 ? 'CHAMPION' : 'TARGET'}</span>
-              <strong><b>${match.target.class}</b>반</strong>
-              <small>${match.target.score.toFixed(1)} HOURS</small>
+          <div class="election-contestants">
+            <div class="election-candidate candidate-leader">
+              <span>${match.targetRank}위 · 앞선 반</span>
+              <strong>${match.target.class}<em>반</em></strong>
+              <b>${match.shares.target.toFixed(1)}%</b>
+              <small>${match.target.score.toFixed(1)}시간</small>
             </div>
-            <div class="versus-mark" aria-hidden="true"><span>VS</span><i></i></div>
-            <div class="fighter fighter-chaser">
-              <span>#${match.chaserRank} CHASER</span>
-              <strong><b>${match.chaser.class}</b>반</strong>
-              <small>${match.chaser.score.toFixed(1)} HOURS</small>
+            <div class="election-gap" aria-hidden="true"><span>시간 격차</span><strong>${match.gap.toFixed(1)}h</strong><i>VS</i></div>
+            <div class="election-candidate candidate-chaser">
+              <span>${match.chaserRank}위 · 맹추격</span>
+              <strong>${match.chaser.class}<em>반</em></strong>
+              <b>${match.shares.chaser.toFixed(1)}%</b>
+              <small>${match.chaser.score.toFixed(1)}시간</small>
             </div>
           </div>
-          <footer class="fight-pressure">
-            <span>CHASE PRESSURE</span>
-            <div class="pressure-track"><i style="width:${match.pressure.toFixed(1)}%"></i><b></b></div>
-            <strong><small>격차</small>${match.gap.toFixed(1)}h</strong>
+          <div class="election-share" aria-hidden="true"><i style="width:${match.shares.target.toFixed(2)}%"></i><b style="width:${match.shares.chaser.toFixed(2)}%"></b></div>
+          <footer class="election-ticker">
+            <b>판세 한마디</b><span>${match.caption}</span>
           </footer>
         </article>`).join('')}
     </div>`;
