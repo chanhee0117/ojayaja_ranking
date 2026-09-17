@@ -7,7 +7,7 @@
  * D열 총시수는 스프레드시트의 값을 그대로 사이트에 표시합니다.
  *
  * 이 코드는 시트의 열·행·제목·서식을 변경하지 않으며, 벌점 저장 시 해당 학생의 E열 값만 수정합니다.
- * 최근 벌점 30건은 사이트 표시용으로 Script Properties에만 보관합니다.
+ * 최근 벌점 30건은 기간 만료 없이 사이트 표시용 Script Properties에만 보관합니다.
  */
 const SETTINGS = Object.freeze({
   SHEET_ID: '1tG8sd7XMOgkechtCgQOz9ROHF3jCcIe1tQcLOgWFbyg',
@@ -31,7 +31,6 @@ const SETTINGS = Object.freeze({
   PENALTY_COLUMN: 5,
   RECENT_PROPERTY: 'DAEJIN_RECENT_PENALTIES',
   MAX_RECENT: 30,
-  RECENT_RETENTION_MS: 3 * 24 * 60 * 60 * 1000,
   COMPETITION_STATE_PROPERTY: 'DAEJIN_COMPETITION_STATE_V2',
   LEGACY_COMPETITION_STATE_PROPERTY: 'DAEJIN_COMPETITION_STATE_V1',
   COMPETITION_EVENT_LIMIT: 12,
@@ -566,10 +565,7 @@ function readRecentPenalties_() {
   try {
     const parsed = JSON.parse(value);
     if (!Array.isArray(parsed)) return [];
-    const cutoff = Date.now() - SETTINGS.RECENT_RETENTION_MS;
-    const recent = parsed
-      .filter(function(record) { return recentPenaltyTimestamp_(record) >= cutoff; })
-      .slice(0, SETTINGS.MAX_RECENT);
+    const recent = parsed.slice(0, SETTINGS.MAX_RECENT);
     if (recent.length !== parsed.length) {
       PropertiesService.getScriptProperties().setProperty(SETTINGS.RECENT_PROPERTY, JSON.stringify(recent));
     }
@@ -577,15 +573,6 @@ function readRecentPenalties_() {
   } catch (error) {
     return [];
   }
-}
-
-function recentPenaltyTimestamp_(record) {
-  const createdAt = Date.parse(String(record && record.createdAt || ''));
-  if (Number.isFinite(createdAt)) return createdAt;
-
-  const match = String(record && record.date || '').match(/(\d{4})\.\s*(\d{1,2})\.\s*(\d{1,2})\.\s*(\d{1,2}):(\d{2})/);
-  if (!match) return 0;
-  return new Date(Number(match[1]), Number(match[2]) - 1, Number(match[3]), Number(match[4]), Number(match[5])).getTime();
 }
 
 function addRecentPenalty_(student, points, reason) {
