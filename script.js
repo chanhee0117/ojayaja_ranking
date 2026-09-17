@@ -459,11 +459,11 @@ function renderReversalAlert() {
   }
 
   if (groups.length === 1) {
-    $('#engagementMode').textContent = `${groups[0].class}반 시범 운영`;
+    $('#engagementMode').textContent = `${groups[0].class}반 기록 집계`;
     alert.innerHTML = `
       <span class="reversal-signal" aria-hidden="true"><i></i></span>
-      <div><small>시범 리그 기록 중</small><strong>2학년 ${groups[0].class}반의 성장 기록을 쌓고 있어요.</strong><p>전체 반 운영이 시작되면 추격 격차와 역전 알림이 이곳에 자동으로 나타납니다.</p></div>
-      <span class="reversal-badge">READY</span>`;
+      <div><small>반 기록 집계 중</small><strong>2학년 ${groups[0].class}반의 성장 기록을 불러왔어요.</strong><p>다른 반 데이터가 추가되면 추격 격차와 역전 알림이 이곳에 자동으로 나타납니다.</p></div>
+      <span class="reversal-badge">LIVE</span>`;
     return;
   }
 
@@ -497,7 +497,7 @@ function renderMascotGrowth() {
     return;
   }
   if (!groups.some(group => group.class === selectedLeagueClass)) {
-    selectedLeagueClass = (groups.find(group => group.class === 6) || groups[0]).class;
+    selectedLeagueClass = groups[0].class;
   }
 
   $('#mascotClassTabs').innerHTML = groups.map(group => {
@@ -567,7 +567,7 @@ function renderRankSimulator(announce = false) {
   result.setAttribute('aria-live', announce ? 'polite' : 'off');
   if (groups.length < 2) {
     result.innerHTML = `<b>${group.class}반의 예상 반영시간은 ${projectedScore.toFixed(1)}시간</b>이에요. 전체 반 운영이 시작되면 같은 슬라이더로 추월 가능성과 예상 순위를 바로 확인할 수 있습니다.`;
-    $('#simulatorAssumption').textContent = '현재는 6반 시범 운영 데이터만 표시됩니다. 시뮬레이션 값은 저장되지 않습니다.';
+    $('#simulatorAssumption').textContent = '현재는 한 개 반의 데이터만 표시됩니다. 시뮬레이션 값은 저장되지 않습니다.';
     return;
   }
 

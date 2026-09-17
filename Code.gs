@@ -19,8 +19,8 @@ const SETTINGS = Object.freeze({
   ADMIN_AUTH_GUARD_PREFIX: 'DAEJIN_ADMIN_GUARD_',
   ADMIN_LOCK_MS: 60 * 60 * 1000,
   ADMIN_NEAR_FAILURE_LIMIT: 3,
-  // 시범 운영: 2학년 6반만 공개. 정식 운영 때 []로 바꾸면 전 학급이 표시됩니다.
-  VISIBLE_CLASSES: [6],
+  // 정식 운영: 빈 배열이면 스프레드시트에 등록된 모든 학급을 공개합니다.
+  VISIBLE_CLASSES: [],
   PENALTY_HEADER_ROW: 1,
   DATA_START_ROW: 2,
   CLASS_COLUMN: 1,
@@ -104,7 +104,7 @@ function doPost(event) {
     const addedPenalty = roundPenalty_(Math.max(0, Number(parameters.addedPenalty) || 0));
     const reason = String(parameters.reason || '벌점 부여').trim().slice(0, 300);
     if (!/^2\d{4}$/.test(studentId)) throw new Error('올바른 5자리 학번이 아닙니다.');
-    if (!isVisibleStudentId_(studentId)) throw new Error('현재 시범 운영 대상 학급의 학생이 아닙니다.');
+    if (!isVisibleStudentId_(studentId)) throw new Error('현재 공개 대상 학급의 학생이 아닙니다.');
     if (!Number.isFinite(penalty) || penalty < 0) throw new Error('벌점은 0 이상의 숫자여야 합니다.');
 
     const lock = LockService.getScriptLock();
