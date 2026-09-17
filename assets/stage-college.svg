@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" role="img" aria-labelledby="title desc">
+  <title id="title">전문대 성장 단계 메달</title>
+  <desc id="desc">월계관과 펼친 책을 조합한 중립적인 대학 성장 단계 문장</desc>
+  <defs>
+    <linearGradient id="ring" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#e8edf1"/>
+      <stop offset=".48" stop-color="#8d9aa5"/>
+      <stop offset="1" stop-color="#3f4c58"/>
+    </linearGradient>
+    <linearGradient id="field" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#23394b"/>
+      <stop offset="1" stop-color="#102432"/>
+    </linearGradient>
+  </defs>
+  <circle cx="128" cy="128" r="116" fill="url(#field)" stroke="url(#ring)" stroke-width="10"/>
+  <circle cx="128" cy="128" r="96" fill="none" stroke="#d9e0e5" stroke-opacity=".35" stroke-width="2"/>
+  <g fill="none" stroke="#c8d2d9" stroke-linecap="round" stroke-linejoin="round" stroke-width="7">
+    <path d="M77 172c-25-17-39-43-38-72m40 57c-14-10-23-22-29-36m31 20c-11-5-19-12-25-21m23 2c-8-2-15-6-21-11"/>
+    <path d="M179 172c25-17 39-43 38-72m-40 57c14-10 23-22 29-36m-31 20c11-5 19-12 25-21m-23 2c8-2 15-6 21-11"/>
+  </g>
+  <path d="M128 61 91 78l37 17 37-17-37-17Z" fill="#f6f1df"/>
+  <path d="M102 88v19c14 12 38 12 52 0V88" fill="none" stroke="#f6f1df" stroke-width="8"/>
+  <path d="M128 129c-13-11-29-14-48-10v48c19-4 35 0 48 12 13-12 29-16 48-12v-48c-19-4-35-1-48 10Z" fill="#f6f1df"/>
+  <path d="M128 132v40" stroke="#9aa7b0" stroke-width="3"/>
+  <path d="M102 185h52" stroke="#c8d2d9" stroke-linecap="round" stroke-width="6"/>
+</svg>
