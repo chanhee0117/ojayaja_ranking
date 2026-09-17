@@ -14,7 +14,7 @@
   <link rel="apple-touch-icon" href="daejin-apple-touch-icon-v1.png">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css">
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Hahmlet:wght@600;700;800;900&amp;display=swap">
-  <link rel="stylesheet" href="styles.css?v=84">
+  <link rel="stylesheet" href="styles.css?v=85">
 </head>
 <body>
   <div id="protectedApp">
@@ -50,34 +50,22 @@
     <section id="class-engagement" class="engagement-section" aria-labelledby="engagementTitle">
       <div class="engagement-heading">
         <div>
-          <h2 id="engagementTitle">반별 추격 현황</h2>
-          <p>선두와의 격차를 확인하고, 반 평균 자습시간으로 성장하는 대학 진학 과정을 살펴보세요.</p>
+          <h2 id="engagementTitle">반별 추격전</h2>
+          <p>바로 앞 순위를 상대로 펼쳐지는 실시간 추격전. 격차가 좁을수록 승부는 더 뜨거워집니다.</p>
         </div>
         <span id="engagementMode" class="engagement-mode">전체 반 운영</span>
       </div>
 
       <div id="reversalAlert" class="reversal-alert" role="status" aria-live="polite" aria-atomic="true">
-        <span class="reversal-signal" aria-hidden="true"><i></i></span>
-        <div>
-          <small>순위 변동 레이더</small>
-          <strong>반 대항전 데이터를 불러오는 중입니다.</strong>
-          <p>새로고침할 때마다 최신 반 순위를 확인합니다.</p>
-        </div>
-        <span class="reversal-badge">LIVE</span>
-      </div>
-
-      <div class="engagement-grid">
-        <article class="engagement-card mascot-panel" aria-labelledby="mascotTitle">
-          <div class="engagement-card-head">
-            <div>
-              <span class="card-index">반별 진학 로드맵</span>
-              <h3 id="mascotTitle">반별 성장 과정</h3>
-            </div>
-            <span class="card-note">반 평균 자습시간으로 자동 성장</span>
+        <div class="fight-broadcast-head">
+          <span class="fight-live" aria-hidden="true"><i></i> LIVE</span>
+          <div>
+            <small>DAEJIN CLASS CHAMPIONSHIP</small>
+            <strong>반 대항전 대진표를 불러오는 중입니다.</strong>
+            <p>최신 자습시간으로 추격 격차를 계산합니다.</p>
           </div>
-          <div id="mascotClassTabs" class="team-selector" aria-label="성장 과정을 확인할 반"></div>
-          <div id="mascotGrowth" class="mascot-growth"></div>
-        </article>
+          <span class="fight-card-label">FIGHT CARD</span>
+        </div>
       </div>
     </section>
 
@@ -209,6 +197,6 @@
   </section>
 
   <script src="config.js?v=48"></script>
-  <script src="script.js?v=78"></script>
+  <script src="script.js?v=79"></script>
 </body>
 </html>

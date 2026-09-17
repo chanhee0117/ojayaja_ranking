@@ -32,7 +32,6 @@ const $ = selector => document.querySelector(selector);
 let students = [];
 let recentPenalties = [];
 let competitionState = null;
-let selectedLeagueClass = null;
 let admin = false;
 let saving = false;
 let activeApiVersion = '';
@@ -378,44 +377,21 @@ function classPalette(classNumber) {
   return CLASS_PALETTES[(Math.max(1, Number(classNumber) || 1) - 1) % CLASS_PALETTES.length];
 }
 
-function classThemeStyle(classNumber) {
-  const palette = classPalette(classNumber);
-  return `--team-primary:${palette.primary};--team-accent:${palette.accent}`;
+function fightThemeStyle(targetClass, chaserClass) {
+  const target = classPalette(targetClass);
+  const chaser = classPalette(chaserClass);
+  return `--target-primary:${target.primary};--target-accent:${target.accent};--chaser-primary:${chaser.primary};--chaser-accent:${chaser.accent}`;
 }
 
-const UNIVERSITY_STAGES = Object.freeze([
-  { key: 'college', label: '전문대', thresholdHours: 0, logo: 'assets/stage-college.svg' },
-  { key: 'keimyung', label: '계명대', thresholdHours: 20, logo: 'assets/stage-keimyung.png' },
-  { key: 'knu', label: '경북대', thresholdHours: 40, logo: 'assets/stage-knu.png' },
-  { key: 'snu', label: '서울대', thresholdHours: 60, logo: 'assets/stage-snu.png' },
-  { key: 'mit', label: 'MIT', thresholdHours: 90, logo: 'assets/stage-mit.svg' }
-]);
-
-function universityStageIndex(hours) {
-  const safeHours = Math.max(0, Number(hours) || 0);
-  return UNIVERSITY_STAGES.reduce((currentIndex, stage, index) => (
-    safeHours >= stage.thresholdHours ? index : currentIndex
-  ), 0);
+function fightIntensity(gap) {
+  if (gap <= 10) return { className: 'is-photo-finish', label: '초접전', english: 'PHOTO FINISH' };
+  if (gap <= 50) return { className: 'is-tight', label: '박빙', english: 'CLOSE FIGHT' };
+  if (gap <= 150) return { className: 'is-chasing', label: '추격 중', english: 'CHASE ON' };
+  return { className: 'is-open', label: '격차 추격', english: 'HUNTING' };
 }
 
-function universityGrowthStateFor(group) {
-  const remoteClass = Array.isArray(competitionState?.classes)
-    ? competitionState.classes.find(item => Number(item.class) === group.class)
-    : null;
-  const remote = remoteClass?.growth || remoteClass?.mascot;
-  const remotePeakHours = Number.isFinite(Number(remote?.peakAverageHours))
-    ? Number(remote.peakAverageHours)
-    : (Number.isFinite(Number(remote?.xp)) ? Number(remote.xp) / 100 : 0);
-  const peakAverageHours = Math.max(0, group.average, remotePeakHours);
-  const stageIndex = universityStageIndex(peakAverageHours);
-  const stage = UNIVERSITY_STAGES[stageIndex];
-  const nextStage = UNIVERSITY_STAGES[stageIndex + 1] || null;
-  const progressPercent = nextStage
-    ? Math.max(0, Math.min(100, (peakAverageHours - stage.thresholdHours)
-      / Math.max(1, nextStage.thresholdHours - stage.thresholdHours) * 100))
-    : 100;
-  const hoursToNextStage = nextStage ? Math.max(0, nextStage.thresholdHours - peakAverageHours) : 0;
-  return { peakAverageHours, stageIndex, stage, nextStage, progressPercent, hoursToNextStage };
+function fightPressure(gap) {
+  return Math.max(6, Math.min(100, 100 - (gap / 300 * 100)));
 }
 
 function renderReversalAlert() {
@@ -430,9 +406,11 @@ function renderReversalAlert() {
   if (groups.length === 1) {
     $('#engagementMode').textContent = `${groups[0].class}반 기록 집계`;
     alert.innerHTML = `
-      <span class="reversal-signal" aria-hidden="true"><i></i></span>
-      <div><small>반 기록 집계 중</small><strong>2학년 ${groups[0].class}반의 성장 기록을 불러왔어요.</strong><p>다른 반 데이터가 추가되면 추격 격차와 역전 알림이 이곳에 자동으로 나타납니다.</p></div>
-      <span class="reversal-badge">LIVE</span>`;
+      <div class="fight-broadcast-head">
+        <span class="fight-live" aria-hidden="true"><i></i> LIVE</span>
+        <div><small>반 기록 집계 중</small><strong>2학년 ${groups[0].class}반의 대결 상대를 기다리고 있습니다.</strong><p>다른 반 데이터가 추가되면 추격 격차와 대진표가 자동으로 나타납니다.</p></div>
+        <span class="fight-card-label">WAITING</span>
+      </div>`;
     return;
   }
 
@@ -442,19 +420,23 @@ function renderReversalAlert() {
     && groups.some(group => group.class === Number(latest.class));
   const matchups = groups.slice(1).map((chaser, index) => {
     const target = groups[index];
+    const gap = Math.max(0, target.score - chaser.score);
     return {
       target,
       chaser,
       targetRank: index + 1,
       chaserRank: index + 2,
-      gap: Math.max(0, target.score - chaser.score)
+      gap,
+      intensity: fightIntensity(gap),
+      pressure: fightPressure(gap)
     };
   });
+  const closeFightCount = matchups.filter(match => match.gap <= 50).length;
 
-  let summaryLabel = '전체 순위 추격 레이더';
-  let summaryTitle = `${matchups.length}개 순위 구간에서 추격전 진행 중`;
-  let summaryDescription = '순위가 맞닿은 반끼리의 현재 격차입니다. 자습시간이 쌓이면 가장 가까운 앞 반부터 추격합니다.';
-  let summaryBadge = 'ALL MATCHES';
+  let summaryLabel = 'DAEJIN CLASS CHAMPIONSHIP';
+  let summaryTitle = `${matchups.length}개 매치업 · ${closeFightCount}개 박빙 승부`;
+  let summaryDescription = '모든 반은 바로 앞 순위를 상대로 추격전을 펼칩니다. 격차가 좁을수록 대결 온도가 높아집니다.';
+  let summaryBadge = 'FIGHT CARD';
 
   if (hasOvertake) {
     const passed = Array.isArray(latest.passedClasses) ? latest.passedClasses.map(Number).filter(Number.isFinite) : [];
@@ -462,82 +444,47 @@ function renderReversalAlert() {
     alert.classList.add('is-overtake');
     summaryLabel = '역전 알림 · 직전 집계 대비';
     summaryTitle = `${Number(latest.class)}반이 ${passedText} 역전했습니다!`;
-    summaryDescription = `${Number(latest.previousRank)}위에서 ${Number(latest.currentRank)}위로 올라섰어요. 아래에서 현재 모든 순위 구간의 격차를 확인하세요.`;
+    summaryDescription = `${Number(latest.previousRank)}위에서 ${Number(latest.currentRank)}위로 올라섰습니다. 아래 파이트 카드에서 새 대진과 격차를 확인하세요.`;
     summaryBadge = 'OVERTAKE';
   }
 
   alert.innerHTML = `
-    <div class="chase-summary">
-      <span class="reversal-signal" aria-hidden="true"><i></i></span>
+    <div class="fight-broadcast-head">
+      <span class="fight-live" aria-hidden="true"><i></i> LIVE</span>
       <div class="chase-copy"><small>${summaryLabel}</small><strong>${summaryTitle}</strong><p>${summaryDescription}</p></div>
-      <span class="reversal-badge">${summaryBadge}</span>
+      <span class="fight-card-label">${summaryBadge}</span>
     </div>
-    <div class="chase-ladder" aria-label="전체 반 인접 순위별 자습시간 격차">
+    <div class="fight-grid" aria-label="전체 반 인접 순위별 추격전 대진표">
       ${matchups.map((match, index) => `
-        <article class="chase-duel ${match.gap <= 50 ? 'is-tight' : ''}" aria-label="${match.targetRank}위 ${match.target.class}반과 ${match.chaserRank}위 ${match.chaser.class}반의 자습시간 격차 ${match.gap.toFixed(1)}시간">
-          <span class="chase-rank">${match.targetRank}·${match.chaserRank}위권${match.gap <= 50 ? '<em>박빙</em>' : ''}</span>
-          <div class="chase-team ${index === 0 ? 'is-leader' : ''}"><small>${index === 0 ? '선두' : '앞선 반'}</small><strong>${match.target.class}반</strong><span>${match.target.score.toFixed(1)}h</span></div>
-          <b class="chase-versus" aria-hidden="true">VS</b>
-          <div class="chase-team is-chaser"><small>추격</small><strong>${match.chaser.class}반</strong><span>${match.chaser.score.toFixed(1)}h</span></div>
-          <div class="chase-gap"><small>격차</small><strong>${match.gap.toFixed(1)}h</strong></div>
+        <article class="fight-match ${index === 0 ? 'is-main-event' : ''} ${match.intensity.className}" style="${fightThemeStyle(match.target.class, match.chaser.class)}" aria-label="${match.targetRank}위 ${match.target.class}반과 ${match.chaserRank}위 ${match.chaser.class}반의 자습시간 격차 ${match.gap.toFixed(1)}시간">
+          <header class="fight-meta">
+            <span>${index === 0 ? 'MAIN EVENT' : `BOUT ${String(index + 1).padStart(2, '0')}`} · ${match.targetRank}/${match.chaserRank}위권</span>
+            <b><i aria-hidden="true"></i>${match.intensity.label}<em>${match.intensity.english}</em></b>
+          </header>
+          <div class="fight-versus">
+            <div class="fighter fighter-target">
+              <span>#${match.targetRank} ${index === 0 ? 'CHAMPION' : 'TARGET'}</span>
+              <strong><b>${match.target.class}</b>반</strong>
+              <small>${match.target.score.toFixed(1)} HOURS</small>
+            </div>
+            <div class="versus-mark" aria-hidden="true"><span>VS</span><i></i></div>
+            <div class="fighter fighter-chaser">
+              <span>#${match.chaserRank} CHASER</span>
+              <strong><b>${match.chaser.class}</b>반</strong>
+              <small>${match.chaser.score.toFixed(1)} HOURS</small>
+            </div>
+          </div>
+          <footer class="fight-pressure">
+            <span>CHASE PRESSURE</span>
+            <div class="pressure-track"><i style="width:${match.pressure.toFixed(1)}%"></i><b></b></div>
+            <strong><small>격차</small>${match.gap.toFixed(1)}h</strong>
+          </footer>
         </article>`).join('')}
-    </div>`;
-}
-
-function renderUniversityGrowth() {
-  const groups = classGroups();
-  if (!groups.length) {
-    $('#mascotClassTabs').innerHTML = '';
-    $('#mascotGrowth').innerHTML = '<p class="hint">반 데이터를 불러오면 성장 과정이 나타납니다.</p>';
-    return;
-  }
-  if (!groups.some(group => group.class === selectedLeagueClass)) {
-    selectedLeagueClass = groups[0].class;
-  }
-
-  $('#mascotClassTabs').innerHTML = groups.map(group => {
-    const growth = universityGrowthStateFor(group);
-    return `
-      <button class="team-tab ${group.class === selectedLeagueClass ? 'is-active' : ''}" type="button" data-team-class="${group.class}" aria-pressed="${group.class === selectedLeagueClass}" style="${classThemeStyle(group.class)}">
-        <span class="team-tab-logo"><img src="${growth.stage.logo}" alt="" aria-hidden="true"></span>
-        <span><b>${group.class}반</b><small>${growth.stage.label} · 평균 ${group.average.toFixed(1)}h</small></span>
-      </button>`;
-  }).join('');
-
-  const group = groups.find(item => item.class === selectedLeagueClass) || groups[0];
-  const growth = universityGrowthStateFor(group);
-  const nextText = growth.nextStage
-    ? `다음 ${growth.nextStage.label}까지 ${growth.hoursToNextStage.toFixed(1)}시간`
-    : '최종 성장 단계 달성';
-  $('#mascotGrowth').innerHTML = `
-    <div class="university-growth stage-${growth.stage.key}" data-class="${group.class}" style="${classThemeStyle(group.class)}">
-      <div class="university-current">
-        <div class="university-logo"><img src="${growth.stage.logo}" alt="${growth.stage.label} 성장 단계 로고"></div>
-        <div class="university-copy">
-          <span>2학년 ${group.class}반 · 현재 ${groups.findIndex(item => item.class === group.class) + 1}위</span>
-          <h4>${growth.stage.label}<em>현재 도달 대학</em></h4>
-          <p>현재 반 평균 <b>${group.average.toFixed(1)}시간</b> · 최고 반 평균 <b>${growth.peakAverageHours.toFixed(1)}시간</b></p>
-          <div class="growth-heading"><span>다음 대학 성장도</span><b>${nextText}</b></div>
-          <div class="growth-track" role="progressbar" aria-label="${group.class}반 다음 대학 성장도" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${Math.round(growth.progressPercent)}" aria-valuetext="${Math.round(growth.progressPercent)}퍼센트"><i style="width:${growth.progressPercent}%"></i></div>
-        </div>
-      </div>
-      <ol class="university-roadmap" aria-label="${group.class}반 대학 성장 과정">
-        ${UNIVERSITY_STAGES.map((stage, index) => {
-          const stateClass = index < growth.stageIndex ? 'is-complete' : (index === growth.stageIndex ? 'is-current' : 'is-locked');
-          const stateText = index < growth.stageIndex ? '달성' : (index === growth.stageIndex ? '현재' : `${stage.thresholdHours}h`);
-          return `<li class="university-stage ${stateClass}">
-            <span class="university-stage-logo"><img src="${stage.logo}" alt="" aria-hidden="true"></span>
-            <b>${stage.label}</b><small>${stateText}</small>
-          </li>`;
-        }).join('')}
-      </ol>
-      <p class="university-disclaimer">성장 단계 연출용 · 각 대학과 제휴·보증 관계 없음</p>
     </div>`;
 }
 
 function renderEngagement() {
   renderReversalAlert();
-  renderUniversityGrowth();
 }
 
 function renderTop3() {
@@ -909,13 +856,6 @@ function setup() {
 
   $('#refresh').onclick = refresh;
   $('#adminRefresh').onclick = refresh;
-
-  $('#mascotClassTabs').onclick = event => {
-    const button = event.target.closest('[data-team-class]');
-    if (!button) return;
-    selectedLeagueClass = Number(button.dataset.teamClass);
-    renderUniversityGrowth();
-  };
 
   $('#searchForm').onsubmit = event => {
     event.preventDefault();
