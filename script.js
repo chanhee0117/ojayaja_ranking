@@ -438,28 +438,49 @@ function renderReversalAlert() {
 
   $('#engagementMode').textContent = `${groups.length}개 반 공식 경쟁`;
   const latest = competitionState?.latestAlert;
-  if (latest && latest.type === 'overtake' && groups.some(group => group.class === Number(latest.class))) {
+  const hasOvertake = latest && latest.type === 'overtake'
+    && groups.some(group => group.class === Number(latest.class));
+  const matchups = groups.slice(1).map((chaser, index) => {
+    const target = groups[index];
+    return {
+      target,
+      chaser,
+      targetRank: index + 1,
+      chaserRank: index + 2,
+      gap: Math.max(0, target.score - chaser.score)
+    };
+  });
+
+  let summaryLabel = '전체 순위 추격 레이더';
+  let summaryTitle = `${matchups.length}개 순위 구간에서 추격전 진행 중`;
+  let summaryDescription = '순위가 맞닿은 반끼리의 현재 격차입니다. 자습시간이 쌓이면 가장 가까운 앞 반부터 추격합니다.';
+  let summaryBadge = 'ALL MATCHES';
+
+  if (hasOvertake) {
     const passed = Array.isArray(latest.passedClasses) ? latest.passedClasses.map(Number).filter(Number.isFinite) : [];
     const passedText = passed.length ? `${passed.join('·')}반을` : '앞선 반을';
     alert.classList.add('is-overtake');
-    alert.innerHTML = `
-      <span class="reversal-signal" aria-hidden="true"><i></i></span>
-      <div><small>역전 알림 · 직전 집계 대비</small><strong>${Number(latest.class)}반이 ${passedText} 역전했습니다!</strong><p>${Number(latest.previousRank)}위에서 ${Number(latest.currentRank)}위로 올라섰어요. 순위 경쟁이 더 뜨거워지고 있습니다.</p></div>
-      <span class="reversal-badge">OVERTAKE</span>`;
-    return;
+    summaryLabel = '역전 알림 · 직전 집계 대비';
+    summaryTitle = `${Number(latest.class)}반이 ${passedText} 역전했습니다!`;
+    summaryDescription = `${Number(latest.previousRank)}위에서 ${Number(latest.currentRank)}위로 올라섰어요. 아래에서 현재 모든 순위 구간의 격차를 확인하세요.`;
+    summaryBadge = 'OVERTAKE';
   }
 
-  const leader = groups[0];
-  const chaser = groups[1];
-  const gap = Math.max(0, leader.score - chaser.score);
   alert.innerHTML = `
-    <span class="reversal-signal" aria-hidden="true"><i></i></span>
-    <div class="chase-copy"><small>현재 추격 현황</small><strong>${chaser.class}반이 ${leader.class}반을 추격 중!</strong><p>순위는 반별 총 자습시간만으로 계산합니다.</p></div>
-    <div class="chase-duel" aria-label="선두 ${leader.class}반과 추격 ${chaser.class}반의 자습시간 격차 ${gap.toFixed(1)}시간">
-      <div class="chase-team is-leader"><small>선두</small><strong>${leader.class}반</strong><span>${leader.score.toFixed(1)}h</span></div>
-      <b class="chase-versus" aria-hidden="true">VS</b>
-      <div class="chase-team is-chaser"><small>추격</small><strong>${chaser.class}반</strong><span>${chaser.score.toFixed(1)}h</span></div>
-      <div class="chase-gap"><small>격차</small><strong>${gap.toFixed(1)}h</strong></div>
+    <div class="chase-summary">
+      <span class="reversal-signal" aria-hidden="true"><i></i></span>
+      <div class="chase-copy"><small>${summaryLabel}</small><strong>${summaryTitle}</strong><p>${summaryDescription}</p></div>
+      <span class="reversal-badge">${summaryBadge}</span>
+    </div>
+    <div class="chase-ladder" aria-label="전체 반 인접 순위별 자습시간 격차">
+      ${matchups.map((match, index) => `
+        <article class="chase-duel ${match.gap <= 50 ? 'is-tight' : ''}" aria-label="${match.targetRank}위 ${match.target.class}반과 ${match.chaserRank}위 ${match.chaser.class}반의 자습시간 격차 ${match.gap.toFixed(1)}시간">
+          <span class="chase-rank">${match.targetRank}·${match.chaserRank}위권${match.gap <= 50 ? '<em>박빙</em>' : ''}</span>
+          <div class="chase-team ${index === 0 ? 'is-leader' : ''}"><small>${index === 0 ? '선두' : '앞선 반'}</small><strong>${match.target.class}반</strong><span>${match.target.score.toFixed(1)}h</span></div>
+          <b class="chase-versus" aria-hidden="true">VS</b>
+          <div class="chase-team is-chaser"><small>추격</small><strong>${match.chaser.class}반</strong><span>${match.chaser.score.toFixed(1)}h</span></div>
+          <div class="chase-gap"><small>격차</small><strong>${match.gap.toFixed(1)}h</strong></div>
+        </article>`).join('')}
     </div>`;
 }
 
