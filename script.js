@@ -32,6 +32,9 @@ const $ = selector => document.querySelector(selector);
 
 let students = [];
 let recentPenalties = [];
+let competitionState = null;
+let selectedLeagueClass = null;
+let simulatorHoursValue = 10;
 let admin = false;
 let saving = false;
 let activeApiVersion = '';
@@ -223,7 +226,11 @@ async function loadFromAppsScript() {
   activeApiVersion = data.apiVersion;
   if (data.ok === false) throw new Error(data.message || '스프레드시트 연결에 실패했습니다.');
   if (!Array.isArray(data.students)) throw new Error('Apps Script 응답에 학생 목록이 없습니다.');
-  return { students: data.students, recentPenalties: Array.isArray(data.recentPenalties) ? data.recentPenalties : [] };
+  return {
+    students: data.students,
+    recentPenalties: Array.isArray(data.recentPenalties) ? data.recentPenalties : [],
+    competition: data.competition && typeof data.competition === 'object' ? data.competition : null
+  };
 }
 
 function loadSheetJsonp() {
@@ -266,7 +273,7 @@ async function loadFromSheetView() {
       hours: values[hoursIndex],
       penalty: values[penaltyIndex]
     };
-  }), recentPenalties: [] };
+  }), recentPenalties: [], competition: null };
 }
 
 async function load() {
@@ -278,6 +285,7 @@ async function load() {
   students = sortStudents(payload.students.map(normalizeStudent).filter(student => student && isVisibleClass(student.class)));
   const visibleIds = new Set(students.map(student => student.studentId));
   recentPenalties = payload.recentPenalties.filter(record => visibleIds.has(String(record.studentId || '')));
+  competitionState = payload.competition;
   if (!students.length) throw new Error('시트에서 반·번호·이름·총시수 형식의 학생 데이터를 찾지 못했습니다.');
 
   render();
@@ -357,6 +365,231 @@ function classGroups() {
       reflected: hours - penalty * PENALTY_HOURS_WEIGHT
     };
   }).sort((a, b) => b.reflected - a.reflected || a.class - b.class);
+}
+
+const CLASS_PALETTES = [
+  { primary: '#315f50', accent: '#d3ad62' },
+  { primary: '#345d82', accent: '#89b9d8' },
+  { primary: '#86554a', accent: '#d9a978' },
+  { primary: '#59578b', accent: '#b1a9da' },
+  { primary: '#456d45', accent: '#9fc579' },
+  { primary: '#8a6732', accent: '#e2bd68' },
+  { primary: '#346b70', accent: '#7cc4c5' },
+  { primary: '#75506e', accent: '#ce9fc2' },
+  { primary: '#4e6375', accent: '#a9bbc8' },
+  { primary: '#78613e', accent: '#cfb886' }
+];
+
+function classPalette(classNumber) {
+  return CLASS_PALETTES[(Math.max(1, Number(classNumber) || 1) - 1) % CLASS_PALETTES.length];
+}
+
+function classThemeStyle(classNumber) {
+  const palette = classPalette(classNumber);
+  return `--team-primary:${palette.primary};--team-accent:${palette.accent}`;
+}
+
+function guardianSvg(classNumber, compact = false) {
+  const suffix = compact ? 'mini' : 'hero';
+  const gradientId = `guardian-${classNumber}-${suffix}`;
+  return `
+    <svg class="guardian-crest" viewBox="0 0 180 180" aria-hidden="true" focusable="false">
+      <defs>
+        <linearGradient id="${gradientId}" x1="35" y1="24" x2="145" y2="158" gradientUnits="userSpaceOnUse">
+          <stop stop-color="var(--team-accent)"/>
+          <stop offset=".48" stop-color="var(--team-primary)"/>
+          <stop offset="1" stop-color="#102c24"/>
+        </linearGradient>
+      </defs>
+      <circle class="guardian-aura" cx="90" cy="90" r="73" fill="none" stroke="var(--team-primary)" stroke-width="2" stroke-dasharray="3 9"/>
+      <path class="guardian-wings" d="M62 84C42 68 24 71 14 80c16 1 24 8 30 18-12 0-20 5-26 12 22-1 37 6 49 21l7-32-12-15Zm56 0c20-16 38-13 48-4-16 1-24 8-30 18 12 0 20 5 26 12-22-1-37 6-49 21l-7-32 12-15Z" fill="var(--team-accent)"/>
+      <path d="M90 24 141 43v41c0 36-20 59-51 73-31-14-51-37-51-73V43l51-19Z" fill="url(#${gradientId})" stroke="rgba(255,255,255,.7)" stroke-width="3"/>
+      <path d="M57 70c0-22 14-34 33-34s33 12 33 34v24c0 23-14 38-33 38S57 117 57 94V70Z" fill="#f6f2e7" stroke="rgba(13,48,40,.32)" stroke-width="3"/>
+      <path d="m58 68 32-19 32 19-5-21-27-12-27 12-5 21Z" fill="var(--team-primary)"/>
+      <path d="M64 75c8-8 44-8 52 0" fill="none" stroke="var(--team-accent)" stroke-width="4" stroke-linecap="round"/>
+      <circle cx="76" cy="87" r="5" fill="#18362d"/><circle cx="104" cy="87" r="5" fill="#18362d"/>
+      <path d="M78 107c8 5 16 5 24 0" fill="none" stroke="#7d5d45" stroke-width="3" stroke-linecap="round"/>
+      <path d="M67 119h46l-5 24H72l-5-24Z" fill="#fff" stroke="var(--team-primary)" stroke-width="3"/>
+      <path d="M90 120v21" stroke="var(--team-accent)" stroke-width="2"/>
+      <text x="90" y="137" text-anchor="middle" fill="var(--team-primary)" font-family="Pretendard,sans-serif" font-size="12" font-weight="900">${Number(classNumber)}반</text>
+    </svg>`;
+}
+
+function fallbackMascotState(group) {
+  const xp = Math.max(0, Math.floor(group.average * 100));
+  const level = Math.max(1, Math.floor(Math.sqrt(xp / 100)) + 1);
+  const levelStartXp = Math.pow(level - 1, 2) * 100;
+  const nextLevelXp = Math.pow(level, 2) * 100;
+  const progressPercent = Math.max(0, Math.min(100, (xp - levelStartXp) / Math.max(1, nextLevelXp - levelStartXp) * 100));
+  return { xp, level, progressPercent, xpToNextLevel: Math.max(0, nextLevelXp - xp) };
+}
+
+function mascotStateFor(group) {
+  const fallback = fallbackMascotState(group);
+  const remoteClass = Array.isArray(competitionState?.classes)
+    ? competitionState.classes.find(item => Number(item.class) === group.class)
+    : null;
+  const remote = remoteClass?.mascot;
+  const xp = Number.isFinite(Number(remote?.xp)) ? Math.max(fallback.xp, Number(remote.xp)) : fallback.xp;
+  const level = Number.isFinite(Number(remote?.level)) ? Math.max(1, Number(remote.level)) : fallback.level;
+  const progressPercent = Number.isFinite(Number(remote?.progressPercent))
+    ? Math.max(0, Math.min(100, Number(remote.progressPercent)))
+    : fallback.progressPercent;
+  const xpToNextLevel = Number.isFinite(Number(remote?.xpToNextLevel))
+    ? Math.max(0, Number(remote.xpToNextLevel))
+    : fallback.xpToNextLevel;
+  const stages = [
+    { max: 3, label: '새싹', index: 1, next: '성장', nextLevel: 4 },
+    { max: 7, label: '성장', index: 2, next: '진화', nextLevel: 8 },
+    { max: 11, label: '진화', index: 3, next: '각성', nextLevel: 12 },
+    { max: Infinity, label: '각성', index: 4, next: '', nextLevel: 0 }
+  ];
+  const stage = stages.find(item => level <= item.max) || stages[3];
+  const evolutionXp = stage.nextLevel ? Math.max(0, Math.pow(stage.nextLevel - 1, 2) * 100 - xp) : 0;
+  return { xp, level, progressPercent, xpToNextLevel, stage, evolutionXp };
+}
+
+function renderReversalAlert() {
+  const groups = classGroups();
+  const alert = $('#reversalAlert');
+  alert.classList.remove('is-overtake');
+  if (!groups.length) {
+    alert.innerHTML = '<div><small>순위 변동 레이더</small><strong>반 데이터를 기다리는 중입니다.</strong></div>';
+    return;
+  }
+
+  if (groups.length === 1) {
+    $('#engagementMode').textContent = `${groups[0].class}반 시범 운영`;
+    alert.innerHTML = `
+      <span class="reversal-signal" aria-hidden="true"><i></i></span>
+      <div><small>시범 리그 기록 중</small><strong>2학년 ${groups[0].class}반의 성장 기록을 쌓고 있어요.</strong><p>전체 반 운영이 시작되면 추격 격차와 역전 알림이 이곳에 자동으로 나타납니다.</p></div>
+      <span class="reversal-badge">READY</span>`;
+    return;
+  }
+
+  $('#engagementMode').textContent = `${groups.length}개 반 공식 경쟁`;
+  const latest = competitionState?.latestAlert;
+  if (latest && latest.type === 'overtake' && groups.some(group => group.class === Number(latest.class))) {
+    const passed = Array.isArray(latest.passedClasses) ? latest.passedClasses.map(Number).filter(Number.isFinite) : [];
+    const passedText = passed.length ? `${passed.join('·')}반을` : '앞선 반을';
+    alert.classList.add('is-overtake');
+    alert.innerHTML = `
+      <span class="reversal-signal" aria-hidden="true"><i></i></span>
+      <div><small>역전 알림 · 직전 집계 대비</small><strong>${Number(latest.class)}반이 ${passedText} 역전했습니다!</strong><p>${Number(latest.previousRank)}위에서 ${Number(latest.currentRank)}위로 올라섰어요. 순위 경쟁이 더 뜨거워지고 있습니다.</p></div>
+      <span class="reversal-badge">OVERTAKE</span>`;
+    return;
+  }
+
+  const leader = groups[0];
+  const chaser = groups[1];
+  const gap = Math.max(0, leader.reflected - chaser.reflected);
+  alert.innerHTML = `
+    <span class="reversal-signal" aria-hidden="true"><i></i></span>
+    <div><small>현재 추격 현황</small><strong>${chaser.class}반이 ${leader.class}반을 ${gap.toFixed(1)}시간 차이로 추격 중!</strong><p>새 자습 기록이 반영되면 순위와 격차가 자동으로 다시 계산됩니다.</p></div>
+    <span class="reversal-badge">LIVE</span>`;
+}
+
+function renderMascotGrowth() {
+  const groups = classGroups();
+  if (!groups.length) {
+    $('#mascotClassTabs').innerHTML = '';
+    $('#mascotGrowth').innerHTML = '<p class="hint">반 데이터를 불러오면 캐릭터가 나타납니다.</p>';
+    return;
+  }
+  if (!groups.some(group => group.class === selectedLeagueClass)) {
+    selectedLeagueClass = (groups.find(group => group.class === 6) || groups[0]).class;
+  }
+
+  $('#mascotClassTabs').innerHTML = groups.map(group => {
+    const mascot = mascotStateFor(group);
+    return `
+      <button class="team-tab ${group.class === selectedLeagueClass ? 'is-active' : ''}" type="button" data-team-class="${group.class}" aria-pressed="${group.class === selectedLeagueClass}" style="${classThemeStyle(group.class)}">
+        ${guardianSvg(group.class, true)}
+        <span><b>${group.class}반</b><small>LV.${mascot.level} · ${mascot.stage.label}</small></span>
+      </button>`;
+  }).join('');
+
+  const group = groups.find(item => item.class === selectedLeagueClass) || groups[0];
+  const mascot = mascotStateFor(group);
+  const nextText = mascot.stage.next
+    ? `다음 ${mascot.stage.next}까지 ${mascot.evolutionXp.toLocaleString('ko-KR')}XP`
+    : '최고 성장 단계 달성';
+  $('#mascotGrowth').innerHTML = `
+    <div class="mascot-hero stage-${mascot.stage.index}" data-class="${group.class}" style="${classThemeStyle(group.class)}">
+      <div class="mascot-visual">${guardianSvg(group.class)}</div>
+      <div class="mascot-copy">
+        <span>2학년 ${group.class}반 · 현재 ${groups.findIndex(item => item.class === group.class) + 1}위</span>
+        <h4>LV.${mascot.level} <em>${mascot.stage.label}</em></h4>
+        <p>반 평균 자습 ${group.average.toFixed(1)}시간으로 성장했어요.</p>
+        <div class="xp-heading"><span>레벨 성장도</span><b>${mascot.xp.toLocaleString('ko-KR')} XP</b></div>
+        <div class="xp-track" role="progressbar" aria-label="${group.class}반 다음 레벨 성장도" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${Math.round(mascot.progressPercent)}" aria-valuetext="${Math.round(mascot.progressPercent)}퍼센트"><i style="width:${mascot.progressPercent}%"></i></div>
+        <div class="xp-meta"><span>다음 레벨까지 ${mascot.xpToNextLevel.toLocaleString('ko-KR')}XP</span><span>${nextText}</span></div>
+      </div>
+    </div>`;
+}
+
+function renderRankSimulator(announce = false) {
+  const groups = classGroups();
+  const select = $('#simulatorClass');
+  if (!groups.length) {
+    select.innerHTML = '<option>반 데이터 없음</option>';
+    select.disabled = true;
+    $('#simulatorResult').textContent = '반 데이터를 불러오면 예상 순위를 계산할 수 있습니다.';
+    return;
+  }
+  if (!groups.some(group => group.class === selectedLeagueClass)) selectedLeagueClass = groups[0].class;
+
+  const previousValue = Number(select.value);
+  select.innerHTML = groups.map(group => `<option value="${group.class}">2학년 ${group.class}반</option>`).join('');
+  const desiredClass = groups.some(group => group.class === selectedLeagueClass)
+    ? selectedLeagueClass
+    : (groups.some(group => group.class === previousValue) ? previousValue : groups[0].class);
+  select.value = String(desiredClass);
+  select.disabled = groups.length < 2;
+  selectedLeagueClass = desiredClass;
+
+  const group = groups.find(item => item.class === desiredClass);
+  const currentRank = groups.findIndex(item => item.class === desiredClass) + 1;
+  const projectedScore = group.reflected + simulatorHoursValue * group.students.length;
+  const projected = groups.map(item => ({
+    class: item.class,
+    score: item.class === desiredClass ? projectedScore : item.reflected
+  })).sort((a, b) => b.score - a.score || a.class - b.class);
+  const projectedRank = projected.findIndex(item => item.class === desiredClass) + 1;
+
+  $('#simulatorHours').value = String(simulatorHoursValue);
+  $('#simulatorHoursOutput').textContent = `${simulatorHoursValue.toFixed(1)}시간`;
+  $('#simulatorCurrentRank').textContent = `${currentRank}위`;
+  $('#simulatorProjectedRank').textContent = groups.length > 1 ? `${projectedRank}위` : '시범';
+  $('#simulatorProjectedScore').textContent = `${projectedScore.toFixed(1)}h`;
+
+  const result = $('#simulatorResult');
+  result.setAttribute('aria-live', announce ? 'polite' : 'off');
+  if (groups.length < 2) {
+    result.innerHTML = `<b>${group.class}반의 예상 반영시간은 ${projectedScore.toFixed(1)}시간</b>이에요. 전체 반 운영이 시작되면 같은 슬라이더로 추월 가능성과 예상 순위를 바로 확인할 수 있습니다.`;
+    $('#simulatorAssumption').textContent = '현재는 6반 시범 운영 데이터만 표시됩니다. 시뮬레이션 값은 저장되지 않습니다.';
+    return;
+  }
+
+  $('#simulatorAssumption').textContent = '상대 반 점수와 벌점은 현재 상태로 유지된다고 가정합니다. 시뮬레이션 값은 저장되지 않습니다.';
+  if (projectedRank < currentRank) {
+    const passed = groups.filter((item, index) => index + 1 < currentRank && item.reflected < projectedScore).map(item => `${item.class}반`);
+    result.innerHTML = `<b>${projectedRank}위까지 상승 가능!</b> 1인당 ${simulatorHoursValue.toFixed(1)}시간을 더 쌓으면 ${passed.slice(-3).join(' · ')}을 추월하는 계산입니다.`;
+  } else if (currentRank === 1) {
+    const second = projected.find(item => item.class !== desiredClass);
+    const lead = second ? Math.max(0, projectedScore - second.score) : 0;
+    result.innerHTML = `<b>선두 유지 예상</b> · 현재 조건이면 2위와의 예상 격차는 ${lead.toFixed(1)}시간입니다.`;
+  } else {
+    const target = groups[currentRank - 2];
+    const requiredPerStudent = Math.max(0, (target.reflected - group.reflected + 0.1) / Math.max(1, group.students.length));
+    result.innerHTML = `<b>${target.class}반을 넘으려면 1인당 약 ${requiredPerStudent.toFixed(1)}시간</b>이 더 필요해요. 슬라이더를 움직여 역전 조건을 확인해 보세요.`;
+  }
+}
+
+function renderEngagement() {
+  renderReversalAlert();
+  renderMascotGrowth();
+  renderRankSimulator(false);
 }
 
 function renderTop3() {
@@ -497,6 +730,7 @@ function showClass(classNumber) {
 
 function render() {
   renderSummary();
+  renderEngagement();
   renderTop3();
   renderRanking();
   renderPenaltyFeed();
@@ -728,6 +962,27 @@ function setup() {
 
   $('#refresh').onclick = refresh;
   $('#adminRefresh').onclick = refresh;
+
+  $('#mascotClassTabs').onclick = event => {
+    const button = event.target.closest('[data-team-class]');
+    if (!button) return;
+    selectedLeagueClass = Number(button.dataset.teamClass);
+    renderMascotGrowth();
+    renderRankSimulator(true);
+  };
+  $('#simulatorClass').onchange = event => {
+    selectedLeagueClass = Number(event.target.value);
+    renderMascotGrowth();
+    renderRankSimulator(true);
+  };
+  $('#simulatorHours').oninput = event => {
+    simulatorHoursValue = Number(event.target.value) || 0;
+    renderRankSimulator(false);
+  };
+  $('#simulatorHours').onchange = event => {
+    simulatorHoursValue = Number(event.target.value) || 0;
+    renderRankSimulator(true);
+  };
 
   $('#searchForm').onsubmit = event => {
     event.preventDefault();

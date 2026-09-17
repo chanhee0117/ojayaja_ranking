@@ -31,7 +31,11 @@ const SETTINGS = Object.freeze({
   PENALTY_COLUMN: 5,
   RECENT_PROPERTY: 'DAEJIN_RECENT_PENALTIES',
   MAX_RECENT: 30,
-  RECENT_RETENTION_MS: 3 * 24 * 60 * 60 * 1000
+  RECENT_RETENTION_MS: 3 * 24 * 60 * 60 * 1000,
+  COMPETITION_STATE_PROPERTY: 'DAEJIN_COMPETITION_STATE_V1',
+  COMPETITION_EVENT_LIMIT: 12,
+  COMPETITION_EVENT_RETENTION_MS: 3 * 24 * 60 * 60 * 1000,
+  PENALTY_HOURS_WEIGHT: 2
 });
 
 function doGet() {
@@ -54,15 +58,27 @@ function doPost(event) {
     if (parameters.apiVersion !== SETTINGS.API_VERSION) throw new Error('사이트와 Apps Script 버전이 일치하지 않습니다.');
     if (parameters.action === 'read') {
       const sheet = penaltySheet_();
+      const students = readStudents_(sheet);
+      let competition;
+      try {
+        competition = buildCompetitionPayload_(students);
+      } catch (competitionError) {
+        competition = {
+          schemaVersion: 1,
+          available: false,
+          message: '반 대항 성장 기능을 잠시 불러오지 못했습니다.'
+        };
+      }
       return jsonResponse_({
         apiVersion: SETTINGS.API_VERSION,
         ok: true,
         sheetName: sheet.getName(),
         sheetGid: sheet.getSheetId(),
-        students: readStudents_(sheet),
+        students: students,
         recentPenalties: readRecentPenalties_().filter(function(record) {
           return isVisibleStudentId_(record && record.studentId);
-        })
+        }),
+        competition: competition
       });
     }
     if (parameters.action === 'verifyAdmin') {
@@ -279,6 +295,196 @@ function isVisibleClass_(classNumber) {
 function isVisibleStudentId_(studentId) {
   const match = String(studentId || '').match(/^2(\d{2})\d{2}$/);
   return Boolean(match) && isVisibleClass_(Number(match[1]));
+}
+
+/**
+ * 반 대항 성장 기능용 집계입니다.
+ * 학생 이름·학번은 저장하지 않고 반별 합계와 직전 순위만 Script Properties에 보관합니다.
+ * 스프레드시트에는 어떤 값도 쓰지 않습니다.
+ */
+function buildCompetitionPayload_(students) {
+  const now = new Date();
+  const current = aggregateClasses_(students);
+  if (!current.length) {
+    return { schemaVersion: 1, available: false, observedAt: now.toISOString(), classes: [] };
+  }
+
+  const lock = LockService.getScriptLock();
+  lock.waitLock(5000);
+  try {
+    const properties = PropertiesService.getScriptProperties();
+    const previousState = readCompetitionState_(properties);
+    const scopeKey = current.map(function(item) { return item.class; }).sort(function(left, right) {
+      return left - right;
+    }).join('-');
+    const sameScope = previousState && previousState.scopeKey === scopeKey;
+    const previousClasses = sameScope && Array.isArray(previousState.classes) ? previousState.classes : [];
+    const previousMap = {};
+    previousClasses.forEach(function(item) { previousMap[String(item.class)] = item; });
+
+    const fingerprint = current.map(function(item) {
+      return [item.class, item.studentCount, item.totalHours, item.totalPenalty, item.score].join(':');
+    }).join('|');
+    const changed = !sameScope || previousState.fingerprint !== fingerprint;
+    const retainedEvents = sameScope && Array.isArray(previousState.events)
+      ? previousState.events.filter(function(event) {
+        return now.getTime() - Date.parse(String(event.occurredAt || '')) <= SETTINGS.COMPETITION_EVENT_RETENTION_MS;
+      })
+      : [];
+    const newEvents = changed && sameScope
+      ? buildRankChangeEvents_(previousMap, current, now)
+      : [];
+    const events = newEvents.concat(retainedEvents).slice(0, SETTINGS.COMPETITION_EVENT_LIMIT);
+
+    const previousPeaks = sameScope && previousState.mascotPeakXp && typeof previousState.mascotPeakXp === 'object'
+      ? previousState.mascotPeakXp
+      : {};
+    const mascotPeakXp = {};
+    const classes = current.map(function(item) {
+      const previous = previousMap[String(item.class)] || null;
+      const earnedXp = Math.max(0, Math.floor(item.averageHours * 100));
+      const peakXp = Math.max(earnedXp, Number(previousPeaks[String(item.class)]) || 0);
+      mascotPeakXp[String(item.class)] = peakXp;
+      return Object.assign({}, item, {
+        previous: previous ? {
+          rank: Number(previous.rank),
+          score: Number(previous.score)
+        } : null,
+        change: {
+          rank: previous ? Number(previous.rank) - item.rank : 0,
+          score: previous ? roundCompetition_(item.score - Number(previous.score)) : 0
+        },
+        mascot: buildMascotState_(peakXp)
+      });
+    });
+
+    const observedAt = changed ? now.toISOString() : String(previousState.observedAt || now.toISOString());
+    if (changed || !sameScope) {
+      const compactClasses = current.map(function(item) {
+        return {
+          class: item.class,
+          studentCount: item.studentCount,
+          totalHours: item.totalHours,
+          totalPenalty: item.totalPenalty,
+          score: item.score,
+          rank: item.rank
+        };
+      });
+      properties.setProperty(SETTINGS.COMPETITION_STATE_PROPERTY, JSON.stringify({
+        schemaVersion: 1,
+        scopeKey: scopeKey,
+        observedAt: observedAt,
+        fingerprint: fingerprint,
+        classes: compactClasses,
+        events: events,
+        mascotPeakXp: mascotPeakXp
+      }));
+    }
+
+    return {
+      schemaVersion: 1,
+      available: true,
+      observedAt: observedAt,
+      scorePolicy: {
+        mode: 'reflectedTotalHours',
+        penaltyHoursWeight: SETTINGS.PENALTY_HOURS_WEIGHT
+      },
+      latestAlert: events.length ? events[0] : null,
+      classes: classes
+    };
+  } finally {
+    lock.releaseLock();
+  }
+}
+
+function aggregateClasses_(students) {
+  const grouped = {};
+  students.forEach(function(student) {
+    const key = String(student.class);
+    if (!grouped[key]) {
+      grouped[key] = { class: Number(student.class), studentCount: 0, totalHours: 0, totalPenalty: 0 };
+    }
+    grouped[key].studentCount += 1;
+    grouped[key].totalHours += Math.max(0, Number(student.hours) || 0);
+    grouped[key].totalPenalty += Math.max(0, Number(student.penalty) || 0);
+  });
+
+  return Object.keys(grouped).map(function(key) {
+    const item = grouped[key];
+    item.totalHours = roundCompetition_(item.totalHours);
+    item.totalPenalty = roundPenalty_(item.totalPenalty);
+    item.averageHours = roundCompetition_(item.totalHours / Math.max(1, item.studentCount), 2);
+    item.score = roundCompetition_(item.totalHours - item.totalPenalty * SETTINGS.PENALTY_HOURS_WEIGHT);
+    return item;
+  }).sort(function(left, right) {
+    return right.score - left.score || left.class - right.class;
+  }).map(function(item, index) {
+    item.rank = index + 1;
+    return item;
+  });
+}
+
+function buildRankChangeEvents_(previousMap, current, now) {
+  const events = [];
+  current.forEach(function(item) {
+    const previous = previousMap[String(item.class)];
+    if (!previous || item.rank >= Number(previous.rank)) return;
+
+    const passedClasses = current.filter(function(other) {
+      const otherPrevious = previousMap[String(other.class)];
+      return other.class !== item.class
+        && otherPrevious
+        && Number(otherPrevious.rank) < Number(previous.rank)
+        && other.rank > item.rank;
+    }).map(function(other) { return other.class; });
+    if (!passedClasses.length) return;
+
+    events.push({
+      id: now.getTime() + '-' + item.class + '-' + item.rank,
+      type: 'overtake',
+      occurredAt: now.toISOString(),
+      class: item.class,
+      passedClasses: passedClasses,
+      previousRank: Number(previous.rank),
+      currentRank: item.rank
+    });
+  });
+  return events.sort(function(left, right) {
+    return left.currentRank - right.currentRank || left.class - right.class;
+  });
+}
+
+function buildMascotState_(xp) {
+  const safeXp = Math.max(0, Math.floor(Number(xp) || 0));
+  const level = Math.max(1, Math.floor(Math.sqrt(safeXp / 100)) + 1);
+  const levelStartXp = Math.pow(level - 1, 2) * 100;
+  const nextLevelXp = Math.pow(level, 2) * 100;
+  const progressPercent = Math.max(0, Math.min(100,
+    (safeXp - levelStartXp) / Math.max(1, nextLevelXp - levelStartXp) * 100
+  ));
+  return {
+    xp: safeXp,
+    level: level,
+    progressPercent: roundCompetition_(progressPercent, 1),
+    xpToNextLevel: Math.max(0, nextLevelXp - safeXp)
+  };
+}
+
+function readCompetitionState_(properties) {
+  const raw = properties.getProperty(SETTINGS.COMPETITION_STATE_PROPERTY);
+  if (!raw) return {};
+  try {
+    const parsed = JSON.parse(raw);
+    return parsed && typeof parsed === 'object' ? parsed : {};
+  } catch (error) {
+    return {};
+  }
+}
+
+function roundCompetition_(value, digits) {
+  const precision = Number.isInteger(digits) ? digits : 1;
+  const factor = Math.pow(10, precision);
+  return Math.round((Number(value) + Number.EPSILON) * factor) / factor;
 }
 
 function setPenalty_(studentId, penalty) {
