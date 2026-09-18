@@ -368,14 +368,6 @@ function fightIntensity(gap) {
   return { className: 'is-open', label: '추격 중' };
 }
 
-function electionCaption(gap) {
-  if (gap <= 3) return '한 자리만 비어도 순위표가 흔들립니다.';
-  if (gap <= 10) return '새로고침 한 번에 순위가 뒤집힐 수 있습니다.';
-  if (gap <= 50) return '앞선 반, 아직 축하하기 이릅니다.';
-  if (gap <= 150) return '추격 반이 조용히 속도를 올리고 있습니다.';
-  return '거리는 멀어도 집계는 아직 끝나지 않았습니다.';
-}
-
 function matchupShares(targetScore, chaserScore) {
   const total = targetScore + chaserScore;
   if (total <= 0) return { target: 50, chaser: 50, margin: 0 };
@@ -417,8 +409,7 @@ function renderReversalAlert() {
       chaserRank: index + 2,
       gap,
       intensity: fightIntensity(gap),
-      shares: matchupShares(target.score, chaser.score),
-      caption: electionCaption(gap)
+      shares: matchupShares(target.score, chaser.score)
     };
   });
   const closeFightCount = matchups.filter(match => match.gap <= 50).length;
@@ -467,9 +458,6 @@ function renderReversalAlert() {
             </div>
           </div>
           <div class="election-share" aria-hidden="true"><i style="width:${match.shares.target.toFixed(2)}%"></i><b style="width:${match.shares.chaser.toFixed(2)}%"></b></div>
-          <footer class="election-ticker">
-            <b>판세 한마디</b><span>${match.caption}</span>
-          </footer>
         </article>`).join('')}
     </div>`;
 }

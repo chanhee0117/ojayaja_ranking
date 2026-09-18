@@ -1,10 +1,10 @@
-const CACHE_NAME = 'daejin-self-study-v91';
+const CACHE_NAME = 'daejin-self-study-v92';
 const APP_SHELL = [
   './',
   './index.html',
-  './styles.css?v=86',
+  './styles.css?v=87',
   './config.js?v=48',
-  './script.js?v=80',
+  './script.js?v=81',
   './manifest.webmanifest',
   './daejin-icon-192-v1.png',
   './daejin-icon-512-v1.png',
